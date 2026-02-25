@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+{% load humanize %}
+{% block title %}Mijozlar{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="page-title">Mijozlar</h1>
+    <a href="{% url 'client_create' %}" class="btn btn-primary">Mijoz qo'shish</a>
+</div>
+
+<form method="get" class="mb-4">
+    <div class="input-group shadow-sm" style="max-width: 380px;">
+        <input type="text" name="q" class="form-control" placeholder="Qidirish..." value="{{ q }}">
+        <button type="submit" class="btn btn-outline-secondary">Qidirish</button>
+    </div>
+</form>
+
+<div class="card">
+    <div class="table-responsive">
+        <table class="table table-hover mb-0">
+            <thead>
+                <tr>
+                    <th>Ism</th>
+                    <th>Telefon</th>
+                    <th>Buyurtmalar</th>
+                    <th>Sarflangan</th>
+                    <th>Qarz</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for c in clients %}
+                <tr>
+                    <td><a href="{% url 'client_detail' c.pk %}">{{ c.full_name }}</a></td>
+                    <td>{{ c.phone }}</td>
+                    <td>{{ c.orders_count }}</td>
+                    <td>{{ c.total_spent|intcomma }} so'm</td>
+                    <td>{% if c.total_debt %}<span class="text-danger">{{ c.total_debt|intcomma }} so'm</span>{% else %}—{% endif %}</td>
+                    <td><a href="{% url 'client_edit' c.pk %}" class="btn btn-sm btn-outline-secondary">Tahrir</a></td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="6" class="text-center text-muted py-4">Mijozlar topilmadi</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% if clients.has_other_pages %}<div class="card-footer">{% include 'blog/_pagination.html' with page_obj=clients %}</div>{% endif %}
+</div>
+{% endblock %}

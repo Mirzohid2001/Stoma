@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+{% load humanize %}
+{% block title %}Kvitansiya{% endblock %}
+{% block content %}
+<div class="receipt-container" id="receipt">
+    <div class="text-center mb-4">
+        <h4>{% if clinic %}{{ clinic.clinic_name }}{% else %}Stomatologik klinika{% endif %}</h4>
+        {% if clinic %}{% if clinic.phone %}<p class="mb-0">{{ clinic.phone }}</p>{% endif %}
+        {% if clinic.address %}<p class="mb-0 small">{{ clinic.address }}</p>{% endif %}{% endif %}
+    </div>
+    <hr>
+    <p><strong>Kvitansiya</strong></p>
+    <p>Sana: {{ payment.payment_date }}</p>
+    <p>Mijoz: {{ payment.order.client.full_name }}</p>
+    <p>Telefon: {{ payment.order.client.phone }}</p>
+    <p>Buyurtma: {{ payment.order.order_number }}</p>
+    <p>Summa: <strong>{{ payment.amount|intcomma }} so'm</strong></p>
+    <p>Turi: {{ payment.get_payment_type_display }}</p>
+    {% if payment.notes %}<p>Eslatma: {{ payment.notes }}</p>{% endif %}
+    <hr>
+</div>
+<div class="mt-3 no-print">
+    <button onclick="window.print()" class="btn btn-primary">Chop etish</button>
+    <a href="{% url 'order_detail' payment.order_id %}" class="btn btn-outline-secondary">Orqaga</a>
+</div>
+
+<style>
+@media print {
+    .navbar, .btn, .no-print { display: none !important; }
+    body { background: white; }
+}
+</style>
+{% endblock %}

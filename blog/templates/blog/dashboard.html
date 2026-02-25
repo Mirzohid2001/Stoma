@@ -1,0 +1,93 @@
+{% extends 'base.html' %}
+{% block auto_refresh_meta %}<meta http-equiv="refresh" content="120">{% endblock %}
+{% load humanize %}
+{% block title %}Bosh sahifa{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="page-title">Bosh sahifa</h1>
+    <div class="d-flex gap-2">
+        <a href="{% url 'client_create' %}" class="btn btn-outline-primary">Mijoz qo'shish</a>
+        <a href="{% url 'order_create' %}" class="btn btn-primary">Buyurtma qo'shish</a>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-md-4">
+        <div class="card h-100 kpi-card kpi-sales bg-white">
+            <div class="card-body py-4">
+                <p class="kpi-label">Bugungi savdo</p>
+                <p class="kpi-value text-primary mb-0">{{ today_sales|intcomma }} <small class="fw-normal text-muted">so'm</small></p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card h-100 kpi-card kpi-week bg-white">
+            <div class="card-body py-4">
+                <p class="kpi-label">Haftalik savdo</p>
+                <p class="kpi-value text-success mb-0">{{ week_sales|intcomma }} <small class="fw-normal text-muted">so'm</small></p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card h-100 kpi-card kpi-debt bg-white">
+            <div class="card-body py-4">
+                <p class="kpi-label">Jami qarzlar</p>
+                <p class="kpi-value text-danger mb-0">{{ total_debt|intcomma }} <small class="fw-normal text-muted">so'm</small></p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span>Yaqin deadlinelar</span>
+                <a href="{% url 'calendar' %}" class="btn btn-sm btn-outline-primary">Kalendar</a>
+            </div>
+            <div class="card-body p-0">
+                {% if upcoming_deadlines %}
+                <div class="list-group list-group-flush">
+                    {% for o in upcoming_deadlines %}
+                    <a href="{% url 'order_detail' o.pk %}" class="list-group-item list-group-item-action d-flex justify-content-between">
+                        <span>{{ o.order_number }} — {{ o.client.full_name }}</span>
+                        <span class="badge bg-primary">{{ o.deadline }}</span>
+                    </a>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="empty-state">
+                    <div class="icon">📅</div>
+                    <p class="mb-0">Yaqin deadlinelar yo'q</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span>So'nggi to'lovlar</span>
+                <a href="{% url 'payment_list' %}" class="btn btn-sm btn-outline-primary">Barchasi</a>
+            </div>
+            <div class="card-body p-0">
+                {% if recent_payments %}
+                <div class="list-group list-group-flush">
+                    {% for p in recent_payments %}
+                    <a href="{% url 'order_detail' p.order_id %}" class="list-group-item list-group-item-action d-flex justify-content-between">
+                        <span>{{ p.order.client.full_name }} — {{ p.order.order_number }}</span>
+                        <span>{{ p.amount|intcomma }} so'm</span>
+                    </a>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="empty-state">
+                    <div class="icon">💰</div>
+                    <p class="mb-0">To'lovlar yo'q</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

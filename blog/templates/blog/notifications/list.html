@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+{% block auto_refresh_meta %}<meta http-equiv="refresh" content="60">{% endblock %}
+{% block title %}Bildirishnomalar{% endblock %}
+{% block content %}
+<h1 class="page-title mb-4">Bildirishnomalar</h1>
+<div class="card">
+    <div class="list-group list-group-flush">
+        {% for n in notifications %}
+        <a href="{% url 'notification_read' n.pk %}" class="list-group-item list-group-item-action {% if not n.is_read %}bg-light{% endif %}">
+            <div class="d-flex justify-content-between">
+                <strong>{{ n.title }}</strong>
+                <small class="text-muted">{{ n.created_at|date:"d.m.Y H:i" }}</small>
+            </div>
+            <p class="mb-0 small">{{ n.message }}</p>
+        </a>
+        {% empty %}
+        <div class="list-group-item text-muted">Bildirishnomalar yo'q</div>
+        {% endfor %}
+    </div>
+    {% if page_obj and page_obj.has_other_pages %}<div class="card-footer">{% include 'blog/_pagination.html' %}</div>{% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,54 @@
+{% extends 'base.html' %}
+{% block title %}Sozlamalar{% endblock %}
+{% block content %}
+<h4 class="mb-4">Sozlamalar</h4>
+
+<div class="row">
+    <div class="col-lg-6 mb-4">
+        <div class="card">
+            <div class="card-header">Klinika ma'lumotlari</div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="clinic" value="1">
+                    {% for f in clinic_form %}
+                    <div class="mb-3">
+                        <label class="form-label">{{ f.label }}</label>
+                        {{ f }}
+                        {% if f.errors %}<div class="text-danger small">{{ f.errors.0 }}</div>{% endif %}
+                    </div>
+                    {% endfor %}
+                    <button type="submit" class="btn btn-primary">Saqlash</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header">Bildirishnomalar</div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="notifications" value="1">
+                    {% for f in notif_form %}
+                    <div class="mb-3">
+                        {% if f.field.widget.input_type == 'checkbox' %}
+                        <div class="form-check">
+                            {{ f }}
+                            <label class="form-check-label" for="{{ f.id_for_label }}">{{ f.label }}</label>
+                        </div>
+                        {% else %}
+                        <label class="form-label">{{ f.label }}</label>
+                        {{ f }}
+                        {% endif %}
+                        {% if f.errors %}<div class="text-danger small">{{ f.errors.0 }}</div>{% endif %}
+                    </div>
+                    {% endfor %}
+                    <p class="small text-muted">Telegram ulash: 1) @BotFather orqali bot yarating. 2) TELEGRAM_BOT_TOKEN ni .env ga qo'shing. 3) Webhook: https://SIZNING_DOMEN/telegram/webhook/ 4) Botga /start yuboring — chat_id avtomatik saqlanadi.</p>
+                    <button type="submit" class="btn btn-primary">Saqlash</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+{% load humanize %}
+{% block title %}To'lovlar{% endblock %}
+{% block content %}
+<h4 class="mb-4">To'lovlar</h4>
+<div class="card">
+    <div class="table-responsive">
+        <table class="table table-hover mb-0">
+            <thead>
+                <tr>
+                    <th>Sana</th>
+                    <th>Buyurtma</th>
+                    <th>Mijoz</th>
+                    <th>Summa</th>
+                    <th>Turi</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in payments %}
+                <tr>
+                    <td>{{ p.payment_date }}</td>
+                    <td><a href="{% url 'order_detail' p.order_id %}">{{ p.order.order_number }}</a></td>
+                    <td><a href="{% url 'client_detail' p.order.client_id %}">{{ p.order.client.full_name }}</a></td>
+                    <td>{{ p.amount|intcomma }} so'm</td>
+                    <td>{{ p.get_payment_type_display }}</td>
+                    <td><a href="{% url 'payment_receipt' p.pk %}" class="btn btn-sm btn-outline-primary" target="_blank">Chek</a></td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="6" class="text-center text-muted py-4">To'lovlar yo'q</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% if payments.has_other_pages %}<div class="card-footer">{% include 'blog/_pagination.html' with page_obj=payments %}</div>{% endif %}
+</div>
+{% endblock %}

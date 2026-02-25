@@ -1,0 +1,9 @@
+Django>=5.0
+celery
+django-celery-beat
+redis
+requests
+django-filter
+openpyxl
+reportlab
+python-dotenv

@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+{% load humanize %}
+{% block title %}Analitika{% endblock %}
+{% block content %}
+<h1 class="page-title mb-4">Analitika</h1>
+
+<div class="row g-4 mb-4">
+    <div class="col-md-4">
+        <div class="card kpi-card kpi-sales h-100">
+            <div class="card-body py-4">
+                <p class="kpi-label">Kunlik savdo</p>
+                <p class="kpi-value text-primary mb-0">{{ daily|intcomma }} <small class="fw-normal text-muted">so'm</small></p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card kpi-card kpi-week h-100">
+            <div class="card-body py-4">
+                <p class="kpi-label">Haftalik savdo</p>
+                <p class="kpi-value text-success mb-0">{{ weekly|intcomma }} <small class="fw-normal text-muted">so'm</small></p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card kpi-card kpi-sales h-100">
+            <div class="card-body py-4">
+                <p class="kpi-label">Oylik savdo</p>
+                <p class="kpi-value text-primary mb-0">{{ monthly|intcomma }} <small class="fw-normal text-muted">so'm</small></p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header">Top 10 mijoz</div>
+            <div class="list-group list-group-flush">
+                {% for item in top_clients %}
+                <a href="{% url 'client_detail' item.client.pk %}" class="list-group-item list-group-item-action d-flex justify-content-between">
+                    <span>{{ item.client.full_name }}</span>
+                    <span>{{ item.spent|intcomma }} so'm</span>
+                </a>
+                {% empty %}
+                <div class="list-group-item text-muted">Ma'lumot yo'q</div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header">Buyurtma statuslari</div>
+            <ul class="list-group list-group-flush">
+                {% for label, count in by_status.items %}
+                <li class="list-group-item d-flex justify-content-between">{{ label }} <span>{{ count }}</span></li>
+                {% endfor %}
+            </ul>
+        </div>
+        <div class="card mt-3">
+            <div class="card-body">
+                <p class="mb-0">Yaqin 7 kun ichida deadline: <strong>{{ upcoming }}</strong> ta</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

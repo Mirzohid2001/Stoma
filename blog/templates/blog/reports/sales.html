@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+{% load humanize %}
+{% block title %}Savdo hisoboti{% endblock %}
+{% block content %}
+<h1 class="page-title mb-4">Savdo hisoboti</h1>
+
+<form method="get" class="mb-4 row g-2 align-items-end">
+    <div class="col-auto">
+        <label class="form-label small">Dan</label>
+        <input type="date" name="from" class="form-control" value="{{ from_date|date:'Y-m-d' }}">
+    </div>
+    <div class="col-auto">
+        <label class="form-label small">Gacha</label>
+        <input type="date" name="to" class="form-control" value="{{ to_date|date:'Y-m-d' }}">
+    </div>
+    <div class="col-auto">
+        <button type="submit" class="btn btn-primary">Hisoblash</button>
+    </div>
+    <div class="col-auto ms-auto">
+        <a href="{% url 'export_sales_excel' %}?from={{ from_date|date:'Y-m-d' }}&to={{ to_date|date:'Y-m-d' }}" class="btn btn-outline-success btn-sm">Excel</a>
+        <a href="{% url 'export_sales_pdf' %}?from={{ from_date|date:'Y-m-d' }}&to={{ to_date|date:'Y-m-d' }}" class="btn btn-outline-danger btn-sm">PDF</a>
+    </div>
+</form>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <h5>Jami savdo: {{ total|intcomma }} so'm</h5>
+    </div>
+</div>
+
+{% if by_service %}
+<div class="card mb-4">
+    <div class="card-header">Xizmat turi bo'yicha</div>
+    <ul class="list-group list-group-flush">
+        {% for name, amount in by_service.items %}
+        <li class="list-group-item d-flex justify-content-between">{{ name }} <span>{{ amount|intcomma }} so'm</span></li>
+        {% endfor %}
+    </ul>
+</div>
+{% endif %}
+
+<div class="card">
+    <div class="card-header">Barcha to'lovlar</div>
+    <div class="table-responsive">
+        <table class="table table-hover mb-0">
+            <thead>
+                <tr>
+                    <th>Sana</th>
+                    <th>Mijoz</th>
+                    <th>Buyurtma</th>
+                    <th>Summa</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in payments %}
+                <tr>
+                    <td>{{ p.payment_date }}</td>
+                    <td>{{ p.order.client.full_name }}</td>
+                    <td><a href="{% url 'order_detail' p.order_id %}">{{ p.order.order_number }}</a></td>
+                    <td>{{ p.amount|intcomma }} so'm</td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="4" class="text-center text-muted py-4">Ma'lumot yo'q</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% if page_obj and page_obj.has_other_pages %}<div class="card-footer">{% include 'blog/_pagination.html' %}</div>{% endif %}
+</div>
+{% endblock %}

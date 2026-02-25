@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+{% load blog_extras humanize %}
+{% block title %}Kalendar{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="mb-0">{{ year }}-yil, {{ month }}-oy</h4>
+    <div>
+        <a href="?year={{ prev.year }}&month={{ prev.month }}" class="btn btn-outline-secondary btn-sm">← Oldingi</a>
+        <a href="?year={{ next.year }}&month={{ next.month }}" class="btn btn-outline-secondary btn-sm">Keyingi →</a>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body p-0">
+        <div class="row g-0 text-center border-bottom">
+            <div class="col border-end p-2 bg-light"><small>Du</small></div>
+            <div class="col border-end p-2 bg-light"><small>Se</small></div>
+            <div class="col border-end p-2 bg-light"><small>Ch</small></div>
+            <div class="col border-end p-2 bg-light"><small>Pa</small></div>
+            <div class="col border-end p-2 bg-light"><small>Ju</small></div>
+            <div class="col border-end p-2 bg-light"><small>Sh</small></div>
+            <div class="col p-2 bg-light"><small>Ya</small></div>
+        </div>
+        {% for week in weeks %}
+        <div class="row g-0">
+            {% for d in week %}
+            <div class="col border-end border-bottom p-2" style="min-height: 90px;">
+                <small class="{% if d.month != month %}text-muted{% endif %}">{{ d.day }}</small>
+                {% with orders=orders_by_date|get_item:d %}
+                {% for o in orders %}
+                <a href="{% url 'order_detail' o.pk %}" class="d-block small text-truncate" title="{{ o.client.full_name }}">{{ o.order_number }}</a>
+                {% endfor %}
+                {% endwith %}
+            </div>
+            {% endfor %}
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

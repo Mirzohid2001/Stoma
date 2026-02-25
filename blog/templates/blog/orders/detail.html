@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+{% load humanize %}
+{% block title %}{{ order.order_number }}{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-1">
+                <li class="breadcrumb-item"><a href="{% url 'order_list' %}">Buyurtmalar</a></li>
+                <li class="breadcrumb-item active">{{ order.order_number }}</li>
+            </ol>
+        </nav>
+        <h4 class="mb-0">{{ order.order_number }} — {{ order.client.full_name }}</h4>
+    </div>
+    <div class="d-flex gap-2">
+        {% if order.status != 'completed' and order.status != 'cancelled' %}
+        <a href="{% url 'payment_add' order.pk %}" class="btn btn-outline-primary">To'lov qo'shish</a>
+        <a href="{% url 'order_edit' order.pk %}" class="btn btn-outline-secondary">Tahrirlash</a>
+        <form method="post" action="{% url 'order_complete' order.pk %}">{% csrf_token %}<button type="submit" class="btn btn-success">Tugallandi</button></form>
+        {% endif %}
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-6 mb-3">
+        <div class="card">
+            <div class="card-header">Buyurtma ma'lumotlari</div>
+            <div class="card-body">
+                <p><strong>Mijoz:</strong> <a href="{% url 'client_detail' order.client_id %}">{{ order.client.full_name }}</a> — {{ order.client.phone }}</p>
+                <p><strong>Tavsif:</strong> {{ order.description }}</p>
+                <p><strong>Umumiy summa:</strong> {{ order.total_price|intcomma }} so'm</p>
+                <p><strong>To'langan:</strong> {{ order.paid_amount|intcomma }} so'm</p>
+                <p><strong>Qoldiq:</strong> <span class="text-danger">{{ order.remaining_debt|intcomma }} so'm</span></p>
+                <p><strong>Deadline:</strong> {{ order.deadline|default:"—" }}</p>
+                <p><strong>Qarz to'lov sanasi:</strong> {{ order.debt_payment_deadline|default:"—" }}</p>
+                <p class="mb-0"><strong>Status:</strong> <span class="badge badge-{{ order.status }}">{{ order.get_status_display }}</span></p>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between">
+                <span>To'lovlar</span>
+                {% if order.status != 'completed' and order.status != 'cancelled' %}
+                <a href="{% url 'payment_add' order.pk %}" class="btn btn-sm btn-primary">Qo'shish</a>
+                {% endif %}
+            </div>
+            <div class="list-group list-group-flush">
+                {% for p in order.payments.all %}
+                <div class="list-group-item d-flex justify-content-between align-items-center">
+                    <span>{{ p.payment_date }} — {{ p.get_payment_type_display }} ({{ p.amount|intcomma }} so'm)</span>
+                    <a href="{% url 'payment_receipt' p.pk %}" class="btn btn-sm btn-outline-primary" target="_blank">Chek</a>
+                </div>
+                {% empty %}
+                <div class="list-group-item text-muted">To'lovlar yo'q</div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

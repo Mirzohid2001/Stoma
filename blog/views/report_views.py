@@ -1,0 +1,130 @@
+from datetime import timedelta
+from django.contrib.auth.decorators import login_required
+from django.core.paginator import Paginator
+from django.db.models import F, Sum
+from django.shortcuts import render
+from django.utils import timezone
+from ..models import Client, Order, Payment
+
+
+@login_required
+def dashboard(request):
+    today = timezone.now().date()
+    week_start = today - timedelta(days=today.weekday())
+
+    today_sales = Payment.objects.filter(payment_date=today).aggregate(s=Sum('amount'))['s'] or 0
+    week_sales = Payment.objects.filter(payment_date__gte=week_start).aggregate(s=Sum('amount'))['s'] or 0
+
+    debtors = Client.objects.filter(orders__status__in=['draft', 'in_progress']).distinct()
+    total_debt = sum(c.total_debt for c in debtors)
+
+    upcoming_deadlines = Order.objects.filter(
+        status__in=['draft', 'in_progress'],
+        deadline__gte=today,
+        deadline__lte=today + timedelta(days=7)
+    ).select_related('client').order_by('deadline')[:10]
+
+    recent_payments = Payment.objects.select_related(
+        'order', 'order__client'
+    ).order_by('-payment_date')[:5]
+
+    unread_count = request.user.notifications.filter(is_read=False).count()
+
+    return render(request, 'blog/dashboard.html', {
+        'today_sales': today_sales,
+        'week_sales': week_sales,
+        'total_debt': total_debt,
+        'upcoming_deadlines': upcoming_deadlines,
+        'recent_payments': recent_payments,
+        'unread_count': unread_count,
+    })
+
+
+@login_required
+def report_sales(request):
+    from_date = request.GET.get('from')
+    to_date = request.GET.get('to')
+    today = timezone.now().date()
+
+    if from_date:
+        from_date = __parse_date(from_date) or today - timedelta(days=30)
+    else:
+        from_date = today - timedelta(days=30)
+
+    if to_date:
+        to_date = __parse_date(to_date) or today
+    else:
+        to_date = today
+
+    payments_qs = Payment.objects.filter(
+        payment_date__gte=from_date,
+        payment_date__lte=to_date
+    ).select_related('order', 'order__client', 'order__service_type').order_by('-payment_date')
+
+    total = payments_qs.aggregate(s=Sum('amount'))['s'] or 0
+
+    by_service = {}
+    for p in payments_qs:
+        key = p.order.service_type.name if p.order.service_type else 'Boshqa'
+        by_service[key] = by_service.get(key, 0) + float(p.amount)
+    by_service = dict(sorted(by_service.items(), key=lambda x: -x[1]))
+
+    paginator = Paginator(payments_qs, 30)
+    page = request.GET.get('page', 1)
+    payments_page = paginator.get_page(page)
+
+    return render(request, 'blog/reports/sales.html', {
+        'payments': payments_page,
+        'page_obj': payments_page,
+        'total': total,
+        'from_date': from_date,
+        'to_date': to_date,
+        'by_service': by_service,
+    })
+
+
+@login_required
+def report_debts(request):
+    today = timezone.now().date()
+    debtors = []
+    seen = set()
+
+    orders_qs = Order.objects.filter(
+        status__in=['draft', 'in_progress']
+    ).select_related('client').order_by(
+        F('debt_payment_deadline').asc(nulls_last=True)
+    )
+    for order in orders_qs:
+        if order.remaining_debt <= 0 or order.client_id in seen:
+            continue
+        seen.add(order.client_id)
+        client_debt = order.client.total_debt
+        dl = order.debt_payment_deadline
+        debtors.append({
+            'client': order.client,
+            'debt': client_debt,
+            'deadline': dl,
+            'days_left': (dl - today).days if dl else None,
+        })
+
+    total_debt = sum(float(d['debt']) for d in debtors)
+    debtors.sort(key=lambda x: (x['days_left'] if x['days_left'] is not None else 999, -float(x['debt'])))
+
+    paginator = Paginator(debtors, 25)
+    page = request.GET.get('page', 1)
+    debtors_page = paginator.get_page(page)
+
+    return render(request, 'blog/reports/debts.html', {
+        'debtors': debtors_page,
+        'page_obj': debtors_page,
+        'total_debt': total_debt,
+        'today': today,
+    })
+
+
+def __parse_date(s):
+    try:
+        from datetime import datetime
+        return datetime.strptime(s, '%Y-%m-%d').date()
+    except (ValueError, TypeError):
+        return None

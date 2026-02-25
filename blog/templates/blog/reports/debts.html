@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+{% load humanize %}
+{% block title %}Qarzdorlar{% endblock %}
+{% block content %}
+<h1 class="page-title mb-4">Qarzdorlar hisoboti</h1>
+
+<div class="mb-3">
+    <a href="{% url 'export_debts_excel' %}" class="btn btn-outline-success btn-sm">Excel</a>
+    <a href="{% url 'export_debts_pdf' %}" class="btn btn-outline-danger btn-sm">PDF</a>
+</div>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <h5>Jami qarzlar: <span class="text-danger">{{ total_debt|intcomma }} so'm</span></h5>
+    </div>
+</div>
+
+<div class="card">
+    <div class="table-responsive">
+        <table class="table table-hover mb-0">
+            <thead>
+                <tr>
+                    <th>Mijoz</th>
+                    <th>Telefon</th>
+                    <th>Qarz</th>
+                    <th>To'lov sanasi</th>
+                    <th>Qolgan kun</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for d in debtors %}
+                <tr>
+                    <td><a href="{% url 'client_detail' d.client.pk %}">{{ d.client.full_name }}</a></td>
+                    <td>{{ d.client.phone }}</td>
+                    <td class="text-danger">{{ d.debt|intcomma }} so'm</td>
+                    <td>{{ d.deadline|default:"—" }}</td>
+                    <td>
+                        {% if d.days_left is not None %}
+                            {% if d.days_left < 0 %}<span class="text-danger">{{ d.days_left }} kun o'tgan</span>
+                            {% elif d.days_left == 0 %}<span class="text-warning">Bugun</span>
+                            {% else %}{{ d.days_left }} kun
+                            {% endif %}
+                        {% else %}—
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="5" class="text-center text-muted py-4">Qarzdorlar yo'q</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% if page_obj and page_obj.has_other_pages %}<div class="card-footer">{% include 'blog/_pagination.html' %}</div>{% endif %}
+</div>
+{% endblock %}

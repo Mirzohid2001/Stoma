@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+{% load humanize %}
+{% block title %}Xizmat turlari{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="page-title">Xizmat turlari</h1>
+    <a href="{% url 'servicetype_create' %}" class="btn btn-primary">Qo'shish</a>
+</div>
+<div class="card">
+    <div class="table-responsive">
+        <table class="table table-hover mb-0">
+            <thead>
+                <tr>
+                    <th>Nomi</th>
+                    <th>Standart narx</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in items %}
+                <tr>
+                    <td>{{ item.name }}</td>
+                    <td>{{ item.default_price|intcomma }} so'm</td>
+                    <td>
+                        <a href="{% url 'servicetype_edit' item.pk %}" class="btn btn-sm btn-outline-secondary">Tahrir</a>
+                        <a href="{% url 'servicetype_delete' item.pk %}" class="btn btn-sm btn-outline-danger" onclick="return confirm('O\'chirilsinmi?')">O'chirish</a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="3" class="text-center text-muted py-4">Xizmat turlari yo'q</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% if page_obj and page_obj.has_other_pages %}<div class="card-footer">{% include 'blog/_pagination.html' %}</div>{% endif %}
+</div>
+{% endblock %}
