@@ -12,7 +12,7 @@
 </div>
 
 <div class="row g-4 mb-4">
-    <div class="col-md-4">
+    <div class="col-6 col-md-3">
         <div class="card h-100 kpi-card kpi-sales bg-white">
             <div class="card-body py-4">
                 <p class="kpi-label">Bugungi savdo</p>
@@ -20,7 +20,7 @@
             </div>
         </div>
     </div>
-    <div class="col-md-4">
+    <div class="col-6 col-md-3">
         <div class="card h-100 kpi-card kpi-week bg-white">
             <div class="card-body py-4">
                 <p class="kpi-label">Haftalik savdo</p>
@@ -28,7 +28,7 @@
             </div>
         </div>
     </div>
-    <div class="col-md-4">
+    <div class="col-6 col-md-3">
         <div class="card h-100 kpi-card kpi-debt bg-white">
             <div class="card-body py-4">
                 <p class="kpi-label">Jami qarzlar</p>
@@ -36,13 +36,57 @@
             </div>
         </div>
     </div>
+    <div class="col-6 col-md-3">
+        <div class="card h-100 kpi-card kpi-expense bg-white">
+            <div class="card-body py-4">
+                <p class="kpi-label">Oylik rasxod</p>
+                <p class="kpi-value text-warning mb-0">{{ month_expenses|intcomma }} <small class="fw-normal text-muted">so'm</small></p>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <a href="{% url 'salary_report' %}" class="text-decoration-none text-dark d-block h-100">
+            <div class="card h-100 kpi-card kpi-salary bg-white">
+                <div class="card-body py-4">
+                    <p class="kpi-label">Bu oy ish haqi</p>
+                    <p class="kpi-value text-info mb-0">{{ month_salary|floatformat:0|intcomma }} <small class="fw-normal text-muted">so'm</small></p>
+                    <p class="small text-muted mb-0 mt-1">Hisobot →</p>
+                </div>
+            </div>
+        </a>
+    </div>
 </div>
 
 <div class="row g-4">
     <div class="col-lg-6">
         <div class="card">
             <div class="card-header d-flex justify-content-between align-items-center">
-                <span>Yaqin deadlinelar</span>
+                <span>So'nggi buyurtmalar</span>
+                <a href="{% url 'order_list' %}" class="btn btn-sm btn-outline-primary">Barchasi</a>
+            </div>
+            <div class="card-body p-0">
+                {% if recent_orders %}
+                <div class="list-group list-group-flush">
+                    {% for o in recent_orders %}
+                    <a href="{% url 'order_detail' o.pk %}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                        <span>{{ o.order_number }} — {{ o.client.full_name }}</span>
+                        <span class="badge badge-{{ o.status }}">{{ o.get_status_display }}</span>
+                    </a>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="empty-state">
+                    <div class="icon">📋</div>
+                    <p class="mb-0">Buyurtmalar yo'q</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span>Yaqin muddatlar</span>
                 <a href="{% url 'calendar' %}" class="btn btn-sm btn-outline-primary">Kalendar</a>
             </div>
             <div class="card-body p-0">
@@ -58,7 +102,7 @@
                 {% else %}
                 <div class="empty-state">
                     <div class="icon">📅</div>
-                    <p class="mb-0">Yaqin deadlinelar yo'q</p>
+                    <p class="mb-0">Yaqin muddatlar yo'q</p>
                 </div>
                 {% endif %}
             </div>
@@ -89,5 +133,52 @@
             </div>
         </div>
     </div>
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span>So'nggi rasxodlar</span>
+                <a href="{% url 'expense_list' %}" class="btn btn-sm btn-outline-primary">Barchasi</a>
+            </div>
+            <div class="card-body p-0">
+                {% if recent_expenses %}
+                <div class="list-group list-group-flush">
+                    {% for e in recent_expenses %}
+                    <a href="{% url 'expense_list' %}" class="list-group-item list-group-item-action d-flex justify-content-between">
+                        <span>{{ e.expense_date }} — {{ e.get_category_display }}</span>
+                        <span class="text-danger">{{ e.amount|intcomma }} so'm</span>
+                    </a>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="empty-state">
+                    <div class="icon">📤</div>
+                    <p class="mb-0">Rasxodlar yo'q</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
 </div>
+{% if today_orders %}
+<div class="row g-4 mt-0">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span>Bugungi buyurtmalar (qoralama/jarayonda)</span>
+                <a href="{% url 'order_list' %}" class="btn btn-sm btn-outline-primary">Barchasi</a>
+            </div>
+            <div class="card-body p-0">
+                <div class="list-group list-group-flush">
+                    {% for o in today_orders %}
+                    <a href="{% url 'order_detail' o.pk %}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                        <span>{{ o.order_number }} — {{ o.client.full_name }}</span>
+                        <span class="badge badge-{{ o.status }}">{{ o.get_status_display }}</span>
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
 {% endblock %}

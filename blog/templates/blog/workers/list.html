@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+{% block title %}Ishchilar{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="page-title">Ishchilar</h1>
+    <a href="{% url 'worker_create' %}" class="btn btn-primary">Qo'shish</a>
+</div>
+<div class="card">
+    <div class="table-responsive">
+        <table class="table table-hover mb-0">
+            <thead>
+                <tr>
+                    <th>To'liq ism</th>
+                    <th>Telefon</th>
+                    <th>Holat</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for w in workers %}
+                <tr>
+                    <td>{{ w.full_name }}</td>
+                    <td>{{ w.phone|default:"—" }}</td>
+                    <td>{% if w.is_active %}<span class="badge bg-success">Faol</span>{% else %}<span class="badge bg-secondary">Nofaol</span>{% endif %}</td>
+                    <td>
+                        <a href="{% url 'worker_edit' w.pk %}" class="btn btn-sm btn-outline-secondary">Tahrir</a>
+                        <a href="{% url 'worker_delete' w.pk %}" class="btn btn-sm btn-outline-danger" onclick="return confirm('Ishchini o\'chirishni xohlaysizmi?')">O'chirish</a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="4" class="text-center text-muted py-4">Ishchilar yo'q</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

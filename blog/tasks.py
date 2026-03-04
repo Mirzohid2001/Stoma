@@ -42,7 +42,13 @@ def check_order_deadlines():
                 created_at__date=today
             ).exists():
                 continue
-            msg = f"Zakaz {order.order_number} — {order.client.full_name}. Bitirishga {order.deadline} sanasiga {(order.deadline - today).days} kun qoldi."
+            days_left = (order.deadline - today).days
+            msg = (
+                "🦷 Zakaz muddati yaqinlashmoqda\n"
+                f"Zakaz: {order.order_number}\n"
+                f"Mijoz: {order.client.full_name}\n"
+                f"Bitirish sanasi: {order.deadline} ({days_left} kun qoldi)"
+            )
             n = Notification.objects.create(
                 user=ns.user,
                 title="Deadline yaqinlashmoqda",
@@ -62,7 +68,7 @@ def check_debt_reminders():
     for ns in NotificationSettings.objects.filter(notify_in_system=True):
         to_date = today + timezone.timedelta(days=ns.debt_reminder_days)
         for order in Order.objects.filter(
-            status__in=['draft', 'in_progress'],
+            status__in=['draft', 'in_progress', 'completed'],
             debt_payment_deadline__isnull=False
         ).filter(
             debt_payment_deadline__lte=to_date
@@ -83,7 +89,12 @@ def check_debt_reminders():
                 days_text = "Bugun"
             else:
                 days_text = f"To'lashga {days_left} kun qoldi"
-            msg = f"Qarzdor: {order.client.full_name}. Qarz: {order.remaining_debt:,.0f} so'm. {days_text}."
+            msg = (
+                "💰 Qarzdorlik eslatmasi\n"
+                f"Mijoz: {order.client.full_name}\n"
+                f"Qarz: {order.remaining_debt:,.0f} so'm\n"
+                f"To'lov sanasi: {order.debt_payment_deadline} ({days_text})"
+            )
             n = Notification.objects.create(
                 user=ns.user,
                 title="Qarz to'lovi yaqinlashmoqda",

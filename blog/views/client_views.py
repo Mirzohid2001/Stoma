@@ -1,9 +1,11 @@
 from django.contrib.auth.decorators import login_required
+from django.contrib import messages
 from django.db.models import Q
 from django.core.paginator import Paginator
 from django.shortcuts import get_object_or_404, redirect, render
 from ..forms import ClientForm
 from ..models import Client
+from ..utils import get_page_number
 
 
 @login_required
@@ -14,8 +16,7 @@ def client_list(request):
         clients = clients.filter(Q(full_name__icontains=q) | Q(phone__icontains=q))
     clients = clients.order_by('-created_at')
     paginator = Paginator(clients, 20)
-    page = request.GET.get('page', 1)
-    clients = paginator.get_page(page)
+    clients = paginator.get_page(get_page_number(request))
     return render(request, 'blog/clients/list.html', {'clients': clients, 'q': q})
 
 
@@ -27,6 +28,7 @@ def client_create(request):
             client = form.save(commit=False)
             client.created_by = request.user
             client.save()
+            messages.success(request, 'Mijoz saqlandi.')
             return redirect('client_detail', pk=client.pk)
     else:
         form = ClientForm()
@@ -46,6 +48,7 @@ def client_edit(request, pk):
         form = ClientForm(request.POST, instance=client)
         if form.is_valid():
             form.save()
+            messages.success(request, 'Mijoz yangilandi.')
             return redirect('client_detail', pk=client.pk)
     else:
         form = ClientForm(instance=client)

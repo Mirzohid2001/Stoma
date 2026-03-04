@@ -6,20 +6,66 @@
         <div class="card">
             <div class="card-header">{{ title }}</div>
             <div class="card-body">
-                <form method="post">
+                <form method="post" id="order-form">
                     {% csrf_token %}
                     <div class="row">
-                        {% for f in form %}
                         <div class="col-md-6 mb-3">
-                            <label class="form-label">{{ f.label }}</label>
-                            {{ f }}
-                            {% if f.errors %}<div class="text-danger small">{{ f.errors.0 }}</div>{% endif %}
+                            <label class="form-label">{{ form.client.label }}</label>
+                            {{ form.client }}
+                            {% if form.client.errors %}<div class="text-danger small">{{ form.client.errors.0 }}</div>{% endif %}
                         </div>
-                        {% if f.name == 'description' or f.name == 'deadline' %}
-                        <div class="col-12"></div>
-                        {% endif %}
-                        {% endfor %}
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">{{ form.description.label }}</label>
+                            {{ form.description }}
+                            {% if form.description.errors %}<div class="text-danger small">{{ form.description.errors.0 }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">{{ form.service_type.label }}</label>
+                            {{ form.service_type }}
+                            {% if form.service_type.errors %}<div class="text-danger small">{{ form.service_type.errors.0 }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">{{ form.quantity.label }}</label>
+                            {{ form.quantity }}
+                            {% if form.quantity.errors %}<div class="text-danger small">{{ form.quantity.errors.0 }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">{{ form.total_price.label }}</label>
+                            {{ form.total_price }}
+                            {% if form.total_price.errors %}<div class="text-danger small">{{ form.total_price.errors.0 }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-6 mb-3"></div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">{{ form.deadline.label }}</label>
+                            {{ form.deadline }}
+                            {% if form.deadline.errors %}<div class="text-danger small">{{ form.deadline.errors.0 }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">{{ form.debt_payment_deadline.label }}</label>
+                            {{ form.debt_payment_deadline }}
+                            {% if form.debt_payment_deadline.errors %}<div class="text-danger small">{{ form.debt_payment_deadline.errors.0 }}</div>{% endif %}
+                        </div>
                     </div>
+                    {% if worker_formset %}
+                    <hr class="my-4">
+                    <h6 class="mb-3">Ishchilar (ishbay — buyurtmadan oylik hisoblanadi)</h6>
+                    <p class="small text-muted">Qaysi ishchi(lar) ushbu buyurtmada ishlashi va ulush foizini kiriting (jami 100% bo‘lishi shart emas).</p>
+                    {{ worker_formset.management_form }}
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead><tr><th>Ishchi</th><th>Ulush (%)</th><th>O'chirish</th></tr></thead>
+                            <tbody>
+                            {% for f in worker_formset %}
+                            <tr class="worker-row">
+                                <td>{{ f.worker }}{% if f.worker.errors %}<div class="text-danger small">{{ f.worker.errors.0 }}</div>{% endif %}</td>
+                                <td>{{ f.share_percent }}{% if f.share_percent.errors %}<div class="text-danger small">{{ f.share_percent.errors.0 }}</div>{% endif %}</td>
+                                <td>{% if f.DELETE %}{{ f.DELETE }}<label for="{{ f.DELETE.id_for_label }}">O'chirish</label>{% endif %}{{ f.id }}</td>
+                            </tr>
+                            {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% endif %}
                     <div class="d-flex gap-2">
                         <button type="submit" class="btn btn-primary">Saqlash</button>
                         <a href="{% if order %}{% url 'order_detail' order.pk %}{% else %}{% url 'order_list' %}{% endif %}" class="btn btn-outline-secondary">Bekor</a>
@@ -29,4 +75,23 @@
         </div>
     </div>
 </div>
+<script>
+(function(){
+    var prices = {{ service_prices|safe }};
+    var sel = document.getElementById('id_service_type');
+    var qty = document.getElementById('id_quantity');
+    var total = document.getElementById('id_total_price');
+    function updateTotal(){
+        if (!sel || !qty || !total) return;
+        var sid = sel.value;
+        var n = parseInt(qty.value, 10) || 1;
+        if (prices[sid] != null) {
+            total.value = (prices[sid] * n).toFixed(2);
+        }
+    }
+    if (sel) sel.addEventListener('change', updateTotal);
+    if (qty) qty.addEventListener('input', updateTotal);
+    updateTotal();
+})();
+</script>
 {% endblock %}

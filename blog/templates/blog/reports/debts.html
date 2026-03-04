@@ -4,15 +4,13 @@
 {% block content %}
 <h1 class="page-title mb-4">Qarzdorlar hisoboti</h1>
 
-<div class="mb-3">
+<div class="d-flex flex-wrap gap-2 mb-4">
     <a href="{% url 'export_debts_excel' %}" class="btn btn-outline-success btn-sm">Excel</a>
     <a href="{% url 'export_debts_pdf' %}" class="btn btn-outline-danger btn-sm">PDF</a>
 </div>
 
-<div class="card mb-4">
-    <div class="card-body">
-        <h5>Jami qarzlar: <span class="text-danger">{{ total_debt|intcomma }} so'm</span></h5>
-    </div>
+<div class="report-summary mb-4">
+    Jami qarzlar: <span class="text-danger fw-bold">{{ total_debt|intcomma }} so'm</span>
 </div>
 
 <div class="card">

@@ -24,13 +24,23 @@ def telegram_webhook(request):
         username = message.get('from', {}).get('username', '')
 
         if text == '/start' and chat_id:
-            user = User.objects.filter(is_staff=True).first()
-            if user:
-                ns, _ = NotificationSettings.objects.get_or_create(
-                    user=user,
-                    defaults={'order_deadline_days': 3, 'debt_reminder_days': 5}
-                )
+            from_username = (message.get('from', {}).get('username') or '').strip().lower()
+            ns = None
+            if from_username:
+                ns = NotificationSettings.objects.filter(
+                    telegram_username__iexact=from_username
+                ).first()
+            if not ns:
+                user = User.objects.filter(is_staff=True).first()
+                if user:
+                    ns, _ = NotificationSettings.objects.get_or_create(
+                        user=user,
+                        defaults={'order_deadline_days': 3, 'debt_reminder_days': 5}
+                    )
+            if ns:
                 ns.telegram_chat_id = chat_id
+                if from_username and not ns.telegram_username:
+                    ns.telegram_username = from_username
                 ns.save()
     except Exception:
         pass

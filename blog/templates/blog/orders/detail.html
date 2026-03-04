@@ -12,12 +12,15 @@
         </nav>
         <h4 class="mb-0">{{ order.order_number }} — {{ order.client.full_name }}</h4>
     </div>
-    <div class="d-flex gap-2">
+    <div class="d-flex flex-wrap gap-2 align-items-center">
         {% if order.status != 'completed' and order.status != 'cancelled' %}
         <a href="{% url 'payment_add' order.pk %}" class="btn btn-outline-primary">To'lov qo'shish</a>
         <a href="{% url 'order_edit' order.pk %}" class="btn btn-outline-secondary">Tahrirlash</a>
-        <form method="post" action="{% url 'order_complete' order.pk %}">{% csrf_token %}<button type="submit" class="btn btn-success">Tugallandi</button></form>
+        <form method="post" action="{% url 'order_complete' order.pk %}" class="d-inline">{% csrf_token %}<button type="submit" class="btn btn-success">Tugallandi</button></form>
+        <form method="post" action="{% url 'order_cancel' order.pk %}" class="d-inline">{% csrf_token %}<button type="submit" class="btn btn-outline-danger" onclick="return confirm('Buyurtmani bekor qilishni xohlaysizmi?')">Bekor qilish</button></form>
         {% endif %}
+        <a href="{% url 'order_copy' order.pk %}" class="btn btn-outline-info">Nusxalash</a>
+        <a href="{% url 'order_print' order.pk %}" class="btn btn-outline-secondary" target="_blank">Chop etish</a>
     </div>
 </div>
 
@@ -25,15 +28,30 @@
     <div class="col-lg-6 mb-3">
         <div class="card">
             <div class="card-header">Buyurtma ma'lumotlari</div>
-            <div class="card-body">
-                <p><strong>Mijoz:</strong> <a href="{% url 'client_detail' order.client_id %}">{{ order.client.full_name }}</a> — {{ order.client.phone }}</p>
-                <p><strong>Tavsif:</strong> {{ order.description }}</p>
-                <p><strong>Umumiy summa:</strong> {{ order.total_price|intcomma }} so'm</p>
-                <p><strong>To'langan:</strong> {{ order.paid_amount|intcomma }} so'm</p>
-                <p><strong>Qoldiq:</strong> <span class="text-danger">{{ order.remaining_debt|intcomma }} so'm</span></p>
-                <p><strong>Deadline:</strong> {{ order.deadline|default:"—" }}</p>
-                <p><strong>Qarz to'lov sanasi:</strong> {{ order.debt_payment_deadline|default:"—" }}</p>
-                <p class="mb-0"><strong>Status:</strong> <span class="badge badge-{{ order.status }}">{{ order.get_status_display }}</span></p>
+            <div class="card-body p-0">
+                <div class="info-row px-3"><strong>Mijoz</strong> <a href="{% url 'client_detail' order.client_id %}">{{ order.client.full_name }}</a> — {{ order.client.phone }}</div>
+                <div class="info-row px-3"><strong>Tavsif</strong> {{ order.description }}</div>
+                <div class="info-row px-3"><strong>Umumiy summa</strong> {{ order.total_price|intcomma }} so'm</div>
+                <div class="info-row px-3"><strong>To'langan</strong> {{ order.paid_amount|intcomma }} so'm</div>
+                <div class="info-row px-3"><strong>Qoldiq</strong> <span class="text-danger">{{ order.remaining_debt|intcomma }} so'm</span></div>
+                <div class="info-row px-3"><strong>Tayyor bo'lish</strong> {{ order.deadline|default:"—" }}</div>
+                <div class="info-row px-3"><strong>Qarz to'lov</strong> {{ order.debt_payment_deadline|default:"—" }}</div>
+                {% if order.order_workers.exists %}
+                <div class="info-row px-3"><strong>Ishchilar (ishbay)</strong> {% for ow in order.order_workers.all %}{{ ow.worker.full_name }} ({{ ow.share_percent }}%){% if not forloop.last %}, {% endif %}{% endfor %}</div>
+                {% endif %}
+                <div class="info-row px-3"><strong>Holat</strong>
+                    <span class="badge badge-{{ order.status }}">{{ order.get_status_display }}</span>
+                    {% if order.status == 'draft' or order.status == 'in_progress' %}
+                    <form method="post" action="{% url 'order_set_status' order.pk %}" class="d-inline ms-2">
+                        {% csrf_token %}
+                        <select name="status" class="form-select form-select-sm d-inline-block" style="width: auto;">
+                            <option value="draft" {% if order.status == 'draft' %}selected{% endif %}>Qoralama</option>
+                            <option value="in_progress" {% if order.status == 'in_progress' %}selected{% endif %}>Jarayonda</option>
+                        </select>
+                        <button type="submit" class="btn btn-sm btn-outline-primary ms-1">O'zgartirish</button>
+                    </form>
+                    {% endif %}
+                </div>
             </div>
         </div>
     </div>

@@ -1,7 +1,7 @@
 from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver
 
-from .models import ActivityLog, Client, Order, Payment
+from .models import ActivityLog, Client, Expense, Order, Payment
 
 
 def log_activity(user, action, model_name, obj=None, object_repr='', changes=None):
@@ -56,3 +56,15 @@ def order_deleted(sender, instance, **kwargs):
 def payment_deleted(sender, instance, **kwargs):
     if user := _get_user():
         log_activity(user, 'delete', 'Payment', obj=instance)
+
+
+@receiver(post_save, sender=Expense)
+def expense_saved(sender, instance, created, **kwargs):
+    if user := _get_user():
+        log_activity(user, 'create' if created else 'update', 'Expense', instance)
+
+
+@receiver(post_delete, sender=Expense)
+def expense_deleted(sender, instance, **kwargs):
+    if user := _get_user():
+        log_activity(user, 'delete', 'Expense', obj=instance)

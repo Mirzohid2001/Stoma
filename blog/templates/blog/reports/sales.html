@@ -4,28 +4,30 @@
 {% block content %}
 <h1 class="page-title mb-4">Savdo hisoboti</h1>
 
-<form method="get" class="mb-4 row g-2 align-items-end">
-    <div class="col-auto">
-        <label class="form-label small">Dan</label>
-        <input type="date" name="from" class="form-control" value="{{ from_date|date:'Y-m-d' }}">
-    </div>
-    <div class="col-auto">
-        <label class="form-label small">Gacha</label>
-        <input type="date" name="to" class="form-control" value="{{ to_date|date:'Y-m-d' }}">
-    </div>
-    <div class="col-auto">
-        <button type="submit" class="btn btn-primary">Hisoblash</button>
-    </div>
-    <div class="col-auto ms-auto">
-        <a href="{% url 'export_sales_excel' %}?from={{ from_date|date:'Y-m-d' }}&to={{ to_date|date:'Y-m-d' }}" class="btn btn-outline-success btn-sm">Excel</a>
-        <a href="{% url 'export_sales_pdf' %}?from={{ from_date|date:'Y-m-d' }}&to={{ to_date|date:'Y-m-d' }}" class="btn btn-outline-danger btn-sm">PDF</a>
-    </div>
-</form>
-
 <div class="card mb-4">
     <div class="card-body">
-        <h5>Jami savdo: {{ total|intcomma }} so'm</h5>
+        <form method="get" class="row g-3 align-items-end form-filter">
+            <div class="col-auto">
+                <label class="form-label mb-0 small">Dan</label>
+                <input type="date" name="from" class="form-control" value="{{ from_date|date:'Y-m-d' }}">
+            </div>
+            <div class="col-auto">
+                <label class="form-label mb-0 small">Gacha</label>
+                <input type="date" name="to" class="form-control" value="{{ to_date|date:'Y-m-d' }}">
+            </div>
+            <div class="col-auto">
+                <button type="submit" class="btn btn-primary">Hisoblash</button>
+            </div>
+            <div class="col-auto ms-auto">
+                <a href="{% url 'export_sales_excel' %}?from={{ from_date|date:'Y-m-d' }}&to={{ to_date|date:'Y-m-d' }}" class="btn btn-outline-success btn-sm">Excel</a>
+                <a href="{% url 'export_sales_pdf' %}?from={{ from_date|date:'Y-m-d' }}&to={{ to_date|date:'Y-m-d' }}" class="btn btn-outline-danger btn-sm">PDF</a>
+            </div>
+        </form>
     </div>
+</div>
+
+<div class="report-summary mb-4">
+    Jami savdo: <span class="text-primary fw-bold">{{ total|intcomma }} so'm</span>
 </div>
 
 {% if by_service %}

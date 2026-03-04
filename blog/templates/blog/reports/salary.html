@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+{% load humanize %}
+{% block title %}Oylik ish haqi{% endblock %}
+{% block content %}
+<h1 class="page-title mb-4">Oylik ish haqi (ishbay)</h1>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3 align-items-end form-filter">
+            <div class="col-auto">
+                <label class="form-label mb-0">Oy</label>
+                <select name="month" class="form-select" style="width: auto;">
+                    {% for m_val, m_label in months_choices %}
+                    <option value="{{ m_val }}" {% if month == m_val %}selected{% endif %}>{{ m_label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-auto">
+                <label class="form-label mb-0">Yil</label>
+                <input type="number" name="year" value="{{ year }}" class="form-control" style="width: 100px;" min="2020" max="2030">
+            </div>
+            <div class="col-auto">
+                <button type="submit" class="btn btn-primary">Ko'rsatish</button>
+            </div>
+        </form>
+        <p class="mb-0 mt-2 small text-muted">Tugallangan buyurtmalar bo'yicha ishchilarning ulush foizi hisoblanadi.</p>
+    </div>
+</div>
+
+<div class="report-summary mb-4">
+    <strong>{{ month_name }} {{ year }}</strong> — Jami ish haqi: <span class="text-primary fw-bold">{{ total_salary|floatformat:0|intcomma }} so'm</span>
+</div>
+
+<div class="card">
+    <div class="table-responsive">
+        <table class="table table-hover mb-0">
+            <thead>
+                <tr>
+                    <th>Ishchi</th>
+                    <th>Telefon</th>
+                    <th>Ish haqi (so'm)</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in rows %}
+                <tr>
+                    <td>{{ r.worker.full_name }}</td>
+                    <td>{{ r.worker.phone|default:"—" }}</td>
+                    <td>{{ r.total|floatformat:0|intcomma }}</td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="3" class="text-center text-muted py-4">Ushbu oy uchun ma'lumot yo'q</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

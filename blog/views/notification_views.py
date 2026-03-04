@@ -3,6 +3,7 @@ from django.core.paginator import Paginator
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from ..models import Notification
+from ..utils import get_page_number
 
 
 @login_required
@@ -15,8 +16,7 @@ def notification_count_api(request):
 def notification_list(request):
     qs = request.user.notifications.all()
     paginator = Paginator(qs, 20)
-    page = request.GET.get('page', 1)
-    notifications = paginator.get_page(page)
+    notifications = paginator.get_page(get_page_number(request))
     return render(request, 'blog/notifications/list.html', {'notifications': notifications, 'page_obj': notifications})
 
 

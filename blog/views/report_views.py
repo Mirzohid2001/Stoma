@@ -4,7 +4,9 @@ from django.core.paginator import Paginator
 from django.db.models import F, Sum
 from django.shortcuts import render
 from django.utils import timezone
-from ..models import Client, Order, Payment
+from collections import defaultdict
+from ..models import Client, Expense, Order, OrderWorker, Payment
+from ..utils import get_page_number
 
 
 @login_required
@@ -15,7 +17,9 @@ def dashboard(request):
     today_sales = Payment.objects.filter(payment_date=today).aggregate(s=Sum('amount'))['s'] or 0
     week_sales = Payment.objects.filter(payment_date__gte=week_start).aggregate(s=Sum('amount'))['s'] or 0
 
-    debtors = Client.objects.filter(orders__status__in=['draft', 'in_progress']).distinct()
+    debtors = Client.objects.filter(
+        orders__status__in=['draft', 'in_progress', 'completed']
+    ).distinct()
     total_debt = sum(c.total_debt for c in debtors)
 
     upcoming_deadlines = Order.objects.filter(
@@ -28,14 +32,39 @@ def dashboard(request):
         'order', 'order__client'
     ).order_by('-payment_date')[:5]
 
+    recent_orders = Order.objects.select_related('client').order_by('-created_at')[:8]
+    today_orders = Order.objects.filter(
+        status__in=['draft', 'in_progress'],
+        created_at__date=today
+    ).select_related('client').order_by('-created_at')[:5]
+
+    month_start = today.replace(day=1)
+    today_expenses = Expense.objects.filter(expense_date=today).aggregate(s=Sum('amount'))['s'] or 0
+    month_expenses = Expense.objects.filter(expense_date__gte=month_start).aggregate(s=Sum('amount'))['s'] or 0
+    recent_expenses = Expense.objects.order_by('-expense_date')[:5]
+
+    # Bu oy ishchilarning hisoblangan oyligi (tugallangan buyurtmalar bo'yicha)
+    month_order_workers = OrderWorker.objects.filter(
+        order__status='completed',
+        order__created_at__date__gte=month_start,
+        order__created_at__date__lte=today,
+    ).select_related('order')
+    month_salary = sum(float(ow.order.total_price) * float(ow.share_percent) / 100 for ow in month_order_workers)
+
     unread_count = request.user.notifications.filter(is_read=False).count()
 
     return render(request, 'blog/dashboard.html', {
         'today_sales': today_sales,
         'week_sales': week_sales,
         'total_debt': total_debt,
+        'today_expenses': today_expenses,
+        'month_expenses': month_expenses,
+        'month_salary': month_salary,
         'upcoming_deadlines': upcoming_deadlines,
         'recent_payments': recent_payments,
+        'recent_orders': recent_orders,
+        'recent_expenses': recent_expenses,
+        'today_orders': today_orders,
         'unread_count': unread_count,
     })
 
@@ -70,8 +99,7 @@ def report_sales(request):
     by_service = dict(sorted(by_service.items(), key=lambda x: -x[1]))
 
     paginator = Paginator(payments_qs, 30)
-    page = request.GET.get('page', 1)
-    payments_page = paginator.get_page(page)
+    payments_page = paginator.get_page(get_page_number(request))
 
     return render(request, 'blog/reports/sales.html', {
         'payments': payments_page,
@@ -90,7 +118,7 @@ def report_debts(request):
     seen = set()
 
     orders_qs = Order.objects.filter(
-        status__in=['draft', 'in_progress']
+        status__in=['draft', 'in_progress', 'completed']
     ).select_related('client').order_by(
         F('debt_payment_deadline').asc(nulls_last=True)
     )
@@ -111,14 +139,61 @@ def report_debts(request):
     debtors.sort(key=lambda x: (x['days_left'] if x['days_left'] is not None else 999, -float(x['debt'])))
 
     paginator = Paginator(debtors, 25)
-    page = request.GET.get('page', 1)
-    debtors_page = paginator.get_page(page)
+    debtors_page = paginator.get_page(get_page_number(request))
 
     return render(request, 'blog/reports/debts.html', {
         'debtors': debtors_page,
         'page_obj': debtors_page,
         'total_debt': total_debt,
         'today': today,
+    })
+
+
+@login_required
+def salary_report(request):
+    """Oylik ish haqi: tugallangan buyurtmalar bo'yicha ishchilarning ulushi (ishbay)."""
+    today = timezone.now().date()
+    year = request.GET.get('year')
+    month = request.GET.get('month')
+    try:
+        year = int(year) if year else today.year
+        month = int(month) if month else today.month
+    except (TypeError, ValueError):
+        year, month = today.year, today.month
+    if month < 1 or month > 12:
+        month = today.month
+    # Oy oralig'i
+    from calendar import monthrange
+    _, last_day = monthrange(year, month)
+    from datetime import date
+    start = date(year, month, 1)
+    end = date(year, month, last_day)
+
+    order_workers = OrderWorker.objects.filter(
+        order__status='completed',
+        order__created_at__date__gte=start,
+        order__created_at__date__lte=end,
+    ).select_related('order', 'worker')
+
+    by_worker = defaultdict(lambda: 0)
+    for ow in order_workers:
+        amount = float(ow.order.total_price) * float(ow.share_percent) / 100
+        by_worker[ow.worker] += amount
+
+    rows = [{'worker': w, 'total': total} for w, total in sorted(by_worker.items(), key=lambda x: -x[1])]
+    total_salary = sum(r['total'] for r in rows)
+
+    months_uz = ['', 'Yanvar', 'Fevral', 'Mart', 'Aprel', 'May', 'Iyun', 'Iyul', 'Avgust', 'Sentabr', 'Oktabr', 'Noyabr', 'Dekabr']
+    month_name = months_uz[month] if 1 <= month <= 12 else str(month)
+    months_choices = [(i, months_uz[i]) for i in range(1, 13)]
+
+    return render(request, 'blog/reports/salary.html', {
+        'rows': rows,
+        'total_salary': total_salary,
+        'year': year,
+        'month': month,
+        'month_name': month_name,
+        'months_choices': months_choices,
     })
 
 

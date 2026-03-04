@@ -25,11 +25,13 @@
                     <li class="nav-item"><a class="nav-link" href="{% url 'client_list' %}">Mijozlar</a></li>
                     <li class="nav-item"><a class="nav-link" href="{% url 'order_list' %}">Buyurtmalar</a></li>
                     <li class="nav-item"><a class="nav-link" href="{% url 'payment_list' %}">To'lovlar</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'expense_list' %}">Rasxodlar</a></li>
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">Hisobotlar</a>
                         <ul class="dropdown-menu">
                             <li><a class="dropdown-item" href="{% url 'report_sales' %}">Savdo</a></li>
                             <li><a class="dropdown-item" href="{% url 'report_debts' %}">Qarzdorlar</a></li>
+                            <li><a class="dropdown-item" href="{% url 'salary_report' %}">Oylik ish haqi</a></li>
                             <li><a class="dropdown-item" href="{% url 'report_analytics' %}">Analitika</a></li>
                         </ul>
                     </li>
@@ -37,6 +39,7 @@
                         <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">Boshqaruv</a>
                         <ul class="dropdown-menu">
                             <li><a class="dropdown-item" href="{% url 'servicetype_list' %}">Xizmat turlari</a></li>
+                            <li><a class="dropdown-item" href="{% url 'worker_list' %}">Ishchilar</a></li>
                             {% if user.is_staff %}<li><a class="dropdown-item" href="{% url 'activity_log' %}">Harakatlar logi</a></li>{% endif %}
                         </ul>
                     </li>
@@ -49,7 +52,7 @@
                             Bildirishnomalar{% if unread_count %} ({{ unread_count }}){% endif %}
                         </a>
                     </li>
-                    <li class="nav-item"><a class="nav-link" href="{% url 'settings' %}">Sozlamalar</a></li>
+                    {% if user.is_staff %}<li class="nav-item"><a class="nav-link" href="{% url 'settings' %}">Sozlamalar</a></li>{% endif %}
                     <li class="nav-item"><a class="nav-link" href="{% url 'logout' %}">Chiqish</a></li>
                 </ul>
             </div>
@@ -60,12 +63,14 @@
     <main class="{% if user.is_authenticated %}py-4{% endif %}">
         <div class="container-fluid {% if user.is_authenticated %}px-4{% endif %}">
             {% if messages %}
-            {% for m in messages %}
-            <div class="alert alert-{{ m.tags }} alert-dismissible fade show" role="alert">
-                {{ m }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            <div class="mb-3">
+                {% for m in messages %}
+                <div class="alert alert-{{ m.tags }} alert-dismissible fade show mb-0" role="alert">
+                    {{ m }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Yopish"></button>
+                </div>
+                {% endfor %}
             </div>
-            {% endfor %}
             {% endif %}
             {% block content %}{% endblock %}
         </div>

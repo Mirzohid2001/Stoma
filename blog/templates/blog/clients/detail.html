@@ -18,14 +18,14 @@
 <div class="row">
     <div class="col-lg-4 mb-3">
         <div class="card">
-            <div class="card-body">
-                <p class="mb-1"><strong>Telefon:</strong> {{ client.phone }}</p>
-                <p class="mb-1"><strong>Buyurtmalar:</strong> {{ client.orders_count }}</p>
-                <p class="mb-1"><strong>Jami sarflangan:</strong> {{ client.total_spent|intcomma }} so'm</p>
-                <p class="mb-0"><strong>Jami qarz:</strong> <span class="text-danger">{{ client.total_debt|intcomma }} so'm</span></p>
+            <div class="card-header">Ma'lumot</div>
+            <div class="card-body p-0">
+                <div class="info-row px-3"><strong>Telefon</strong> {{ client.phone }}</div>
+                <div class="info-row px-3"><strong>Buyurtmalar</strong> {{ client.orders_count }}</div>
+                <div class="info-row px-3"><strong>Jami sarflangan</strong> {{ client.total_spent|intcomma }} so'm</div>
+                <div class="info-row px-3"><strong>Jami qarz</strong> <span class="text-danger">{{ client.total_debt|intcomma }} so'm</span></div>
                 {% if client.notes %}
-                <hr>
-                <p class="mb-0 small">{{ client.notes }}</p>
+                <div class="info-row px-3"><strong>Eslatma</strong> <span class="small">{{ client.notes }}</span></div>
                 {% endif %}
             </div>
         </div>
@@ -44,8 +44,8 @@
                             <th>Tavsif</th>
                             <th>Summa</th>
                             <th>Qoldiq</th>
-                            <th>Status</th>
-                            <th>Deadline</th>
+                            <th>Holat</th>
+                            <th>Tayyor bo'lish sanasi</th>
                             <th></th>
                         </tr>
                     </thead>

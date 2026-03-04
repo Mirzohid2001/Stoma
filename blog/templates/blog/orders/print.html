@@ -1,0 +1,56 @@
+{% load humanize %}
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Buyurtma {{ order.order_number }}</title>
+    <style>
+        body { font-family: Arial, sans-serif; font-size: 14px; padding: 20px; max-width: 600px; margin: 0 auto; }
+        .header { text-align: center; margin-bottom: 24px; border-bottom: 1px solid #ddd; padding-bottom: 12px; }
+        table { width: 100%; border-collapse: collapse; margin: 16px 0; }
+        th, td { text-align: left; padding: 8px; border-bottom: 1px solid #eee; }
+        th { font-weight: 600; width: 140px; }
+        .total { font-weight: bold; font-size: 16px; }
+        .badge { display: inline-block; padding: 4px 8px; border-radius: 4px; font-size: 12px; }
+        .badge-draft { background: #e9ecef; }
+        .badge-in_progress { background: #cce5ff; }
+        .badge-completed { background: #d4edda; }
+        .badge-cancelled { background: #f8d7da; }
+        @media print { .no-print { display: none !important; } body { padding: 0; } }
+    </style>
+</head>
+<body>
+    <div class="no-print" style="margin-bottom: 16px;">
+        <button onclick="window.print()" class="no-print" style="padding: 8px 16px; cursor: pointer;">Chop etish</button>
+        <a href="{% url 'order_detail' order.pk %}" style="margin-left: 8px;">Orqaga</a>
+    </div>
+    <div class="header">
+        <h2 style="margin: 0;">Buyurtma {{ order.order_number }}</h2>
+        <p style="margin: 4px 0 0; color: #666;">{{ order.client.full_name }} — {{ order.client.phone }}</p>
+    </div>
+    <table>
+        <tr><th>Tavsif</th><td>{{ order.description }}</td></tr>
+        <tr><th>Xizmat turi</th><td>{{ order.service_type.name|default:"—" }}</td></tr>
+        <tr><th>Miqdori</th><td>{{ order.quantity }}</td></tr>
+        <tr><th>Umumiy summa</th><td class="total">{{ order.total_price|intcomma }} so'm</td></tr>
+        <tr><th>To'langan</th><td>{{ order.paid_amount|intcomma }} so'm</td></tr>
+        <tr><th>Qoldiq</th><td>{{ order.remaining_debt|intcomma }} so'm</td></tr>
+        <tr><th>Tayyor bo'lish sanasi</th><td>{{ order.deadline|default:"—" }}</td></tr>
+        <tr><th>Qarz to'lov sanasi</th><td>{{ order.debt_payment_deadline|default:"—" }}</td></tr>
+        <tr><th>Holat</th><td><span class="badge badge-{{ order.status }}">{{ order.get_status_display }}</span></td></tr>
+    </table>
+    {% if order.payments.exists %}
+    <h3 style="margin-top: 24px;">To'lovlar</h3>
+    <table>
+        <thead><tr><th>Sana</th><th>Turi</th><th>Summa</th></tr></thead>
+        <tbody>
+        {% for p in order.payments.all %}
+        <tr><td>{{ p.payment_date }}</td><td>{{ p.get_payment_type_display }}</td><td>{{ p.amount|intcomma }} so'm</td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    {% endif %}
+    <p style="margin-top: 24px; font-size: 12px; color: #888;">Chop etilgan: {% now "d.m.Y H:i" %}</p>
+</body>
+</html>

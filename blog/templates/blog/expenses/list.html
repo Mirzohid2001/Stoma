@@ -1,0 +1,110 @@
+{% extends 'base.html' %}
+{% load humanize pagination_tags %}
+{% block title %}Rasxodlar{% endblock %}
+{% block content %}
+<nav aria-label="breadcrumb" class="mb-2">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Bosh sahifa</a></li>
+        <li class="breadcrumb-item active">Rasxodlar</li>
+    </ol>
+</nav>
+<div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
+    <h1 class="page-title mb-0">Rasxodlar</h1>
+    <div class="d-flex gap-2">
+        <a href="{% url 'export_expenses_excel' %}?from={{ from_date|date:'Y-m-d' }}&to={{ to_date|date:'Y-m-d' }}" class="btn btn-outline-success btn-sm">Excel</a>
+        <a href="{% url 'expense_create' %}" class="btn btn-primary">Rasxod qo'shish</a>
+    </div>
+</div>
+
+<form method="get" class="card mb-4">
+    <div class="card-body">
+        <div class="row g-2 align-items-end">
+            <div class="col-auto">
+                <label class="form-label small">Qidirish</label>
+                <input type="text" name="q" class="form-control form-control-sm" placeholder="Tavsif..." value="{{ q }}" style="width: 160px;">
+            </div>
+            <div class="col-auto">
+                <label class="form-label small">Turi</label>
+                <select name="category" class="form-select form-select-sm" style="width: auto;">
+                    <option value="">Barchasi</option>
+                    {% for value, label in category_choices %}
+                    <option value="{{ value }}" {% if category == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-auto">
+                <label class="form-label small">Dan</label>
+                <input type="date" name="from" class="form-control form-control-sm" value="{{ from_date|date:'Y-m-d' }}">
+            </div>
+            <div class="col-auto">
+                <label class="form-label small">Gacha</label>
+                <input type="date" name="to" class="form-control form-control-sm" value="{{ to_date|date:'Y-m-d' }}">
+            </div>
+            <div class="col-auto">
+                <button type="submit" class="btn btn-outline-secondary btn-sm">Filtrlash</button>
+            </div>
+        </div>
+    </div>
+</form>
+
+<div class="row g-4 mb-4">
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body py-3">
+                <p class="text-muted small mb-0">Jami rasxod (tanlangan davr)</p>
+                <p class="mb-0 fw-bold text-danger">{{ total|intcomma }} so'm</p>
+            </div>
+        </div>
+    </div>
+    {% if by_category %}
+    <div class="col-md-8">
+        <div class="card h-100">
+            <div class="card-header py-2">Turi bo'yicha</div>
+            <div class="card-body p-0">
+                <ul class="list-group list-group-flush">
+                    {% for label, amount in by_category %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center py-2">
+                        <span>{{ label }}</span>
+                        <span>{{ amount|intcomma }} so'm</span>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<div class="card">
+    <div class="table-responsive">
+        <table class="table table-hover mb-0">
+            <thead>
+                <tr>
+                    <th>Sana</th>
+                    <th>Turi</th>
+                    <th>Summa</th>
+                    <th>Tavsif</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for e in expenses %}
+                <tr>
+                    <td>{{ e.expense_date }}</td>
+                    <td>{{ e.get_category_display }}</td>
+                    <td>{{ e.amount|intcomma }} so'm</td>
+                    <td>{{ e.description|default:"—" }}</td>
+                    <td>
+                        <a href="{% url 'expense_edit' e.pk %}" class="btn btn-sm btn-outline-secondary">Tahrir</a>
+                        <a href="{% url 'expense_delete' e.pk %}" class="btn btn-sm btn-outline-danger" onclick="return confirm('Rasxodni o\'chirishni xohlaysizmi?')">O'chirish</a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="5" class="text-center text-muted py-4">Rasxodlar yo'q</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% if expenses.has_other_pages %}<div class="card-footer">{% include 'blog/_pagination.html' with page_obj=expenses %}</div>{% endif %}
+</div>
+{% endblock %}

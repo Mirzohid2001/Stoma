@@ -3,8 +3,8 @@
 <div class="login-wrapper">
     <div class="card login-card" style="width: 100%; max-width: 420px;">
         <div class="card-header">
-            <h4 class="mb-0 fw-bold">Stomatologik klinika</h4>
-            <small class="opacity-90">Tizimga kirish</small>
+            <h4 class="mb-1 fw-bold">Stoma</h4>
+            <small class="opacity-90">Stomatologik klinika — tizimga kirish</small>
         </div>
         <div class="card-body">
             {% if error %}
@@ -13,7 +13,7 @@
             <form method="post">
                 {% csrf_token %}
                 <div class="mb-3">
-                    <label class="form-label">Login</label>
+                    <label class="form-label">Foydalanuvchi nomi</label>
                     <input type="text" name="username" class="form-control form-control-lg" placeholder="Foydalanuvchi nomi" required autofocus>
                 </div>
                 <div class="mb-4">

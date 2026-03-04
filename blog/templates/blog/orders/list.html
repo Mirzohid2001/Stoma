@@ -8,23 +8,27 @@
     <a href="{% url 'order_create' %}" class="btn btn-primary">Buyurtma qo'shish</a>
 </div>
 
-<form method="get" class="mb-3 row g-2">
-    <div class="col-auto">
-        <input type="text" name="q" class="form-control" placeholder="Qidirish..." value="{{ q }}" style="width: 200px;">
+<div class="card mb-3">
+    <div class="card-body py-3">
+        <form method="get" class="row g-2 align-items-center form-filter">
+            <div class="col-auto">
+                <input type="text" name="q" class="form-control" placeholder="Qidirish..." value="{{ q }}" style="width: 200px;">
+            </div>
+            <div class="col-auto">
+                <select name="status" class="form-select" style="width: auto;">
+                    <option value="">Barcha statuslar</option>
+                    <option value="draft" {% if status == 'draft' %}selected{% endif %}>Qoralama</option>
+                    <option value="in_progress" {% if status == 'in_progress' %}selected{% endif %}>Jarayonda</option>
+                    <option value="completed" {% if status == 'completed' %}selected{% endif %}>Tugallangan</option>
+                    <option value="cancelled" {% if status == 'cancelled' %}selected{% endif %}>Bekor</option>
+                </select>
+            </div>
+            <div class="col-auto">
+                <button type="submit" class="btn btn-outline-primary">Filtrlash</button>
+            </div>
+        </form>
     </div>
-    <div class="col-auto">
-        <select name="status" class="form-select" style="width: auto;">
-            <option value="">Barcha statuslar</option>
-            <option value="draft" {% if status == 'draft' %}selected{% endif %}>Qoralama</option>
-            <option value="in_progress" {% if status == 'in_progress' %}selected{% endif %}>Jarayonda</option>
-            <option value="completed" {% if status == 'completed' %}selected{% endif %}>Tugallangan</option>
-            <option value="cancelled" {% if status == 'cancelled' %}selected{% endif %}>Bekor</option>
-        </select>
-    </div>
-    <div class="col-auto">
-        <button type="submit" class="btn btn-outline-secondary">Filtrlash</button>
-    </div>
-</form>
+</div>
 
 <div class="card">
     <div class="table-responsive">
@@ -36,8 +40,8 @@
                     <th>Tavsif</th>
                     <th>Summa</th>
                     <th>Qoldiq</th>
-                    <th>Status</th>
-                    <th>Deadline</th>
+                    <th>Holat</th>
+                    <th>Tayyor bo'lish sanasi</th>
                     <th></th>
                 </tr>
             </thead>
