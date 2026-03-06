@@ -23,7 +23,7 @@
                     <td>{{ item.default_price|intcomma }} so'm</td>
                     <td>
                         <a href="{% url 'servicetype_edit' item.pk %}" class="btn btn-sm btn-outline-secondary">Tahrir</a>
-                        <a href="{% url 'servicetype_delete' item.pk %}" class="btn btn-sm btn-outline-danger" onclick="return confirm('O\'chirilsinmi?')">O'chirish</a>
+                        <form method="post" action="{% url 'servicetype_delete' item.pk %}" class="d-inline">{% csrf_token %}<button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('O\'chirilsinmi?')">O'chirish</button></form>
                     </td>
                 </tr>
                 {% empty %}

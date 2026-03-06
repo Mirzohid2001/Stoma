@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-{% block auto_refresh_meta %}<meta http-equiv="refresh" content="120">{% endblock %}
+{% block auto_refresh_meta %}<meta http-equiv="refresh" content="30">{% endblock %}
 {% load humanize %}
 {% block title %}Bosh sahifa{% endblock %}
 {% block content %}
@@ -57,6 +57,28 @@
     </div>
 </div>
 
+<div class="card mb-4 report-summary net-profit-card {% if month_net_profit >= 0 %}net-profit-positive{% else %}net-profit-negative{% endif %}">
+    <div class="card-body">
+        <h6 class="text-muted text-uppercase small fw-bold mb-3">Oylik sof foyda</h6>
+        <div class="row align-items-center g-3">
+            <div class="col-md-4">
+                <span class="text-muted small">Oylik daromad (to'lovlar)</span>
+                <div class="fw-bold text-primary fs-5">{{ month_revenue|floatformat:0|intcomma }} so'm</div>
+            </div>
+            <div class="col-md-4">
+                <span class="text-muted small">Jami rasxod (rasxodlar + ish haqi)</span>
+                <div class="fw-bold text-danger fs-5">− {{ total_month_expense|floatformat:0|intcomma }} so'm</div>
+            </div>
+            <div class="col-md-4">
+                <span class="text-muted small">Sof foyda</span>
+                <div class="fw-bold fs-5 {% if month_net_profit >= 0 %}text-success{% else %}text-danger{% endif %}">
+                    {{ month_net_profit|floatformat:0|intcomma }} so'm
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="row g-4">
     <div class="col-lg-6">
         <div class="card">
@@ -90,12 +112,20 @@
                 <a href="{% url 'calendar' %}" class="btn btn-sm btn-outline-primary">Kalendar</a>
             </div>
             <div class="card-body p-0">
-                {% if upcoming_deadlines %}
+                {% if overdue_deadlines or upcoming_deadlines %}
                 <div class="list-group list-group-flush">
-                    {% for o in upcoming_deadlines %}
-                    <a href="{% url 'order_detail' o.pk %}" class="list-group-item list-group-item-action d-flex justify-content-between">
+                    {% for o in overdue_deadlines %}
+                    <a href="{% url 'order_detail' o.pk %}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
                         <span>{{ o.order_number }} — {{ o.client.full_name }}</span>
-                        <span class="badge bg-primary">{{ o.deadline }}</span>
+                        <span class="badge bg-danger" title="Muddati o'tgan">{{ o.deadline|date:"d.m.Y" }} (o'tgan)</span>
+                    </a>
+                    {% endfor %}
+                    {% for o in upcoming_deadlines %}
+                    <a href="{% url 'order_detail' o.pk %}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                        <span>{{ o.order_number }} — {{ o.client.full_name }}</span>
+                        <span class="badge {% if o.deadline == today %}bg-warning text-dark{% elif o.deadline == tomorrow %}bg-info{% else %}bg-primary{% endif %}">
+                            {% if o.deadline == today %}Bugun{% elif o.deadline == tomorrow %}Ertaga{% else %}{{ o.deadline|date:"d.m.Y" }}{% endif %}
+                        </span>
                     </a>
                     {% endfor %}
                 </div>
@@ -103,6 +133,7 @@
                 <div class="empty-state">
                     <div class="icon">📅</div>
                     <p class="mb-0">Yaqin muddatlar yo'q</p>
+                    <p class="small mb-0 mt-1">Draft yoki jarayondagi buyurtmalarda «Tayyor bo'lish sanasi» ni belgilang</p>
                 </div>
                 {% endif %}
             </div>

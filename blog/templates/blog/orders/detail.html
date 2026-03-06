@@ -13,8 +13,10 @@
         <h4 class="mb-0">{{ order.order_number }} — {{ order.client.full_name }}</h4>
     </div>
     <div class="d-flex flex-wrap gap-2 align-items-center">
-        {% if order.status != 'completed' and order.status != 'cancelled' %}
+        {% if order.status != 'cancelled' and order.remaining_debt > 0 or order.status == 'draft' or order.status == 'in_progress' %}
         <a href="{% url 'payment_add' order.pk %}" class="btn btn-outline-primary">To'lov qo'shish</a>
+        {% endif %}
+        {% if order.status != 'completed' and order.status != 'cancelled' %}
         <a href="{% url 'order_edit' order.pk %}" class="btn btn-outline-secondary">Tahrirlash</a>
         <form method="post" action="{% url 'order_complete' order.pk %}" class="d-inline">{% csrf_token %}<button type="submit" class="btn btn-success">Tugallandi</button></form>
         <form method="post" action="{% url 'order_cancel' order.pk %}" class="d-inline">{% csrf_token %}<button type="submit" class="btn btn-outline-danger" onclick="return confirm('Buyurtmani bekor qilishni xohlaysizmi?')">Bekor qilish</button></form>
@@ -59,7 +61,7 @@
         <div class="card">
             <div class="card-header d-flex justify-content-between">
                 <span>To'lovlar</span>
-                {% if order.status != 'completed' and order.status != 'cancelled' %}
+                {% if order.status != 'cancelled' and order.remaining_debt > 0 or order.status == 'draft' or order.status == 'in_progress' %}
                 <a href="{% url 'payment_add' order.pk %}" class="btn btn-sm btn-primary">Qo'shish</a>
                 {% endif %}
             </div>

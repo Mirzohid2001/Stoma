@@ -1,6 +1,7 @@
 {% extends 'base.html' %}
 {% load humanize pagination_tags %}
 {% block title %}Rasxodlar{% endblock %}
+{% block auto_refresh_meta %}<meta http-equiv="refresh" content="30">{% endblock %}
 {% block content %}
 <nav aria-label="breadcrumb" class="mb-2">
     <ol class="breadcrumb">
@@ -96,7 +97,7 @@
                     <td>{{ e.description|default:"—" }}</td>
                     <td>
                         <a href="{% url 'expense_edit' e.pk %}" class="btn btn-sm btn-outline-secondary">Tahrir</a>
-                        <a href="{% url 'expense_delete' e.pk %}" class="btn btn-sm btn-outline-danger" onclick="return confirm('Rasxodni o\'chirishni xohlaysizmi?')">O'chirish</a>
+                        <form method="post" action="{% url 'expense_delete' e.pk %}" class="d-inline">{% csrf_token %}<button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Rasxodni o\'chirishni xohlaysizmi?')">O'chirish</button></form>
                     </td>
                 </tr>
                 {% empty %}

@@ -5,7 +5,7 @@ from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 from ..forms import OrderForm, OrderWorkerFormSet
-from ..models import Order, OrderWorker, ServiceType
+from ..models import Client, Order, OrderWorker, ServiceType
 from ..utils import get_page_number
 
 
@@ -53,12 +53,14 @@ def order_create(request):
                 formset.save()
                 messages.success(request, 'Buyurtma yaratildi.')
                 return redirect('order_detail', pk=order.pk)
-            # formset xatolari bo'lsa sahifani qayta ko'rsatamiz
+            messages.warning(request, 'Buyurtma yaratildi. Ishchilar ma\'lumotida xato — quyida tuzating.')
+            return redirect('order_edit', pk=order.pk)
         else:
             formset = OrderWorkerFormSet(request.POST)
     else:
         initial = {}
-        if client_id := request.GET.get('client'):
+        client_id = request.GET.get('client')
+        if client_id and Client.objects.filter(pk=client_id).exists():
             initial['client'] = client_id
         form = OrderForm(initial=initial)
         formset = OrderWorkerFormSet()

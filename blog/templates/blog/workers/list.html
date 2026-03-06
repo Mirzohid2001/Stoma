@@ -24,7 +24,7 @@
                     <td>{% if w.is_active %}<span class="badge bg-success">Faol</span>{% else %}<span class="badge bg-secondary">Nofaol</span>{% endif %}</td>
                     <td>
                         <a href="{% url 'worker_edit' w.pk %}" class="btn btn-sm btn-outline-secondary">Tahrir</a>
-                        <a href="{% url 'worker_delete' w.pk %}" class="btn btn-sm btn-outline-danger" onclick="return confirm('Ishchini o\'chirishni xohlaysizmi?')">O'chirish</a>
+                        <form method="post" action="{% url 'worker_delete' w.pk %}" class="d-inline">{% csrf_token %}<button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Ishchini o\'chirishni xohlaysizmi?')">O'chirish</button></form>
                     </td>
                 </tr>
                 {% empty %}
@@ -33,5 +33,6 @@
             </tbody>
         </table>
     </div>
+    {% if page_obj.has_other_pages %}<div class="card-footer">{% include 'blog/_pagination.html' %}</div>{% endif %}
 </div>
 {% endblock %}

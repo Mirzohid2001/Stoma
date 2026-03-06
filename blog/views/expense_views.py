@@ -1,24 +1,14 @@
-from datetime import datetime, timedelta
-
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.core.paginator import Paginator
 from django.db.models import Q, Sum
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
+from django.views.decorators.http import require_POST
 
 from ..forms import ExpenseForm
 from ..models import Expense
-from ..utils import get_page_number
-
-
-def _parse_date(s):
-    if not s:
-        return None
-    try:
-        return datetime.strptime(s.strip(), '%Y-%m-%d').date()
-    except (ValueError, TypeError):
-        return None
+from ..utils import get_page_number, parse_date
 
 
 @login_required
@@ -28,8 +18,8 @@ def expense_list(request):
     today = timezone.now().date()
     month_start = today.replace(day=1)
 
-    from_date = _parse_date(request.GET.get('from'))
-    to_date = _parse_date(request.GET.get('to'))
+    from_date = parse_date(request.GET.get('from'))
+    to_date = parse_date(request.GET.get('to'))
     if not from_date and not to_date:
         from_date = month_start
         to_date = today
@@ -44,9 +34,7 @@ def expense_list(request):
     if to_date:
         expenses_qs = expenses_qs.filter(expense_date__lte=to_date)
     if q:
-        expenses_qs = expenses_qs.filter(
-            Q(description__icontains=q) | Q(amount__icontains=q)
-        )
+        expenses_qs = expenses_qs.filter(description__icontains=q)
     if category:
         expenses_qs = expenses_qs.filter(category=category)
 
@@ -104,6 +92,7 @@ def expense_edit(request, pk):
 
 
 @login_required
+@require_POST
 def expense_delete(request, pk):
     expense = get_object_or_404(Expense, pk=pk)
     expense.delete()

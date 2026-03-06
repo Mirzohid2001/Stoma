@@ -6,7 +6,7 @@ from django.shortcuts import render
 from django.utils import timezone
 from collections import defaultdict
 from ..models import Client, Expense, Order, OrderWorker, Payment
-from ..utils import get_page_number
+from ..utils import get_page_number, parse_date
 
 
 @login_required
@@ -22,11 +22,22 @@ def dashboard(request):
     ).distinct()
     total_debt = sum(c.total_debt for c in debtors)
 
+    # Muddati o'tgan (kechikkan) — draft/in_progress, deadline bugundan oldin
+    overdue_deadlines = Order.objects.filter(
+        status__in=['draft', 'in_progress'],
+        deadline__lt=today,
+        deadline__isnull=False,
+    ).select_related('client').order_by('deadline')[:5]
+
+    # Yaqin muddatlar — bugundan keyingi 7 kun ichida
     upcoming_deadlines = Order.objects.filter(
         status__in=['draft', 'in_progress'],
         deadline__gte=today,
-        deadline__lte=today + timedelta(days=7)
+        deadline__lte=today + timedelta(days=7),
+        deadline__isnull=False,
     ).select_related('client').order_by('deadline')[:10]
+
+    tomorrow = today + timedelta(days=1)
 
     recent_payments = Payment.objects.select_related(
         'order', 'order__client'
@@ -43,6 +54,12 @@ def dashboard(request):
     month_expenses = Expense.objects.filter(expense_date__gte=month_start).aggregate(s=Sum('amount'))['s'] or 0
     recent_expenses = Expense.objects.order_by('-expense_date')[:5]
 
+    # Oylik daromad = shu oydagi to'lovlar (kirim)
+    month_revenue = Payment.objects.filter(
+        payment_date__gte=month_start,
+        payment_date__lte=today,
+    ).aggregate(s=Sum('amount'))['s'] or 0
+
     # Bu oy ishchilarning hisoblangan oyligi (tugallangan buyurtmalar bo'yicha)
     month_order_workers = OrderWorker.objects.filter(
         order__status='completed',
@@ -50,6 +67,11 @@ def dashboard(request):
         order__created_at__date__lte=today,
     ).select_related('order')
     month_salary = sum(float(ow.order.total_price) * float(ow.share_percent) / 100 for ow in month_order_workers)
+
+    # Jami rasxod (oylik) = rasxodlar + ish haqi
+    total_month_expense = float(month_expenses) + float(month_salary)
+    # Sof foyda = daromad - rasxod
+    month_net_profit = float(month_revenue) - total_month_expense
 
     unread_count = request.user.notifications.filter(is_read=False).count()
 
@@ -60,7 +82,13 @@ def dashboard(request):
         'today_expenses': today_expenses,
         'month_expenses': month_expenses,
         'month_salary': month_salary,
+        'month_revenue': month_revenue,
+        'total_month_expense': total_month_expense,
+        'month_net_profit': month_net_profit,
+        'overdue_deadlines': overdue_deadlines,
         'upcoming_deadlines': upcoming_deadlines,
+        'today': today,
+        'tomorrow': tomorrow,
         'recent_payments': recent_payments,
         'recent_orders': recent_orders,
         'recent_expenses': recent_expenses,
@@ -76,12 +104,12 @@ def report_sales(request):
     today = timezone.now().date()
 
     if from_date:
-        from_date = __parse_date(from_date) or today - timedelta(days=30)
+        from_date = parse_date(from_date) or today - timedelta(days=30)
     else:
         from_date = today - timedelta(days=30)
 
     if to_date:
-        to_date = __parse_date(to_date) or today
+        to_date = parse_date(to_date) or today
     else:
         to_date = today
 
@@ -197,9 +225,3 @@ def salary_report(request):
     })
 
 
-def __parse_date(s):
-    try:
-        from datetime import datetime
-        return datetime.strptime(s, '%Y-%m-%d').date()
-    except (ValueError, TypeError):
-        return None

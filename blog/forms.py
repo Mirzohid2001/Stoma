@@ -36,6 +36,12 @@ class OrderWorkerForm(forms.ModelForm):
             'share_percent': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'min': 0, 'max': 100}),
         }
 
+    def clean_share_percent(self):
+        value = self.cleaned_data.get('share_percent')
+        if value is not None and (value < 0 or value > 100):
+            raise forms.ValidationError('Ulush 0 dan 100 gacha bo\'lishi kerak')
+        return value
+
 
 OrderWorkerFormSet = forms.inlineformset_factory(
     Order,
@@ -92,10 +98,19 @@ class OrderForm(forms.ModelForm):
 
 
 class PaymentForm(forms.ModelForm):
+    def __init__(self, *args, order=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.order = order
+
     def clean_amount(self):
         amount = self.cleaned_data.get('amount')
         if amount is not None and amount <= 0:
             raise forms.ValidationError('Summa 0 dan katta bo\'lishi kerak')
+        if self.order is not None and amount is not None:
+            from decimal import Decimal
+            remaining = getattr(self.order, 'remaining_debt', None)
+            if remaining is not None and remaining != Decimal('0') and amount > remaining:
+                raise forms.ValidationError('Summa qoldiq qarzdan oshmasligi kerak (qoldiq: %s so\'m)' % int(remaining))
         return amount
 
     class Meta:
@@ -140,6 +155,12 @@ class ExpenseForm(forms.ModelForm):
 
 
 class ServiceTypeForm(forms.ModelForm):
+    def clean_default_price(self):
+        value = self.cleaned_data.get('default_price')
+        if value is not None and value < 0:
+            raise forms.ValidationError('Narx manfiy bo\'lmasligi kerak')
+        return value
+
     class Meta:
         model = ServiceType
         fields = ['name', 'default_price']
@@ -171,6 +192,18 @@ class NotificationSettingsForm(forms.ModelForm):
 
     def clean_telegram_username(self):
         value = (self.cleaned_data.get('telegram_username') or '').strip().lstrip('@').lower()
+        return value
+
+    def clean_order_deadline_days(self):
+        value = self.cleaned_data.get('order_deadline_days')
+        if value is not None and value < 1:
+            raise forms.ValidationError('Kamida 1 kun bo\'lishi kerak')
+        return value
+
+    def clean_debt_reminder_days(self):
+        value = self.cleaned_data.get('debt_reminder_days')
+        if value is not None and value < 1:
+            raise forms.ValidationError('Kamida 1 kun bo\'lishi kerak')
         return value
 
 

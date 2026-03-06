@@ -11,8 +11,11 @@ from ..utils import get_page_number
 @login_required
 def payment_add(request, order_pk):
     order = get_object_or_404(Order, pk=order_pk)
+    if order.status == 'cancelled':
+        messages.warning(request, 'Bekor qilingan buyurtmaga to\'lov qo\'shib bo\'lmaydi.')
+        return redirect('order_detail', pk=order.pk)
     if request.method == 'POST':
-        form = PaymentForm(request.POST)
+        form = PaymentForm(request.POST, order=order)
         if form.is_valid():
             payment = form.save(commit=False)
             payment.order = order
@@ -21,7 +24,7 @@ def payment_add(request, order_pk):
             messages.success(request, 'To\'lov qo\'shildi.')
             return redirect('order_detail', pk=order.pk)
     else:
-        form = PaymentForm(initial={'payment_date': timezone.now().date()})
+        form = PaymentForm(initial={'payment_date': timezone.now().date()}, order=order)
     if order.status == 'completed':
         messages.info(request, 'Bu buyurtma tugallangan. Keyingi to\'lovlarni ham qayd etishingiz mumkin.')
     return render(request, 'blog/orders/payment_form.html', {'form': form, 'order': order})

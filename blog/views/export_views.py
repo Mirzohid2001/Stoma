@@ -1,4 +1,3 @@
-from datetime import datetime
 from io import BytesIO
 
 from django.contrib.auth.decorators import login_required
@@ -15,6 +14,7 @@ from reportlab.lib.units import mm
 from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 
 from ..models import Client, Expense, Order, Payment
+from ..utils import parse_date
 
 # Excel umumiy stillar
 _EXCEL_HEADER_FILL = PatternFill(start_color='0d9488', end_color='0d9488', fill_type='solid')
@@ -66,13 +66,6 @@ def _style_excel_sheet(ws, num_cols, currency_cols=None, total_row=None, column_
         ws.freeze_panes = 'A2'
 
 
-def _parse_date(s):
-    try:
-        return datetime.strptime(s, '%Y-%m-%d').date()
-    except (ValueError, TypeError):
-        return None
-
-
 @login_required
 def export_clients_excel(request):
     clients = Client.objects.all().order_by('full_name')
@@ -102,8 +95,8 @@ def export_clients_excel(request):
 def export_expenses_excel(request):
     from datetime import timedelta
     today = timezone.now().date()
-    from_date = _parse_date(request.GET.get('from')) or (today.replace(day=1))
-    to_date = _parse_date(request.GET.get('to')) or today
+    from_date = parse_date(request.GET.get('from')) or today.replace(day=1)
+    to_date = parse_date(request.GET.get('to')) or today
 
     expenses = Expense.objects.filter(
         expense_date__gte=from_date,
@@ -130,8 +123,10 @@ def export_expenses_excel(request):
 
 @login_required
 def export_sales_excel(request):
-    from_date = _parse_date(request.GET.get('from')) or (timezone.now().date() - __import__('datetime').timedelta(days=30))
-    to_date = _parse_date(request.GET.get('to')) or timezone.now().date()
+    from datetime import timedelta
+    today = timezone.now().date()
+    from_date = parse_date(request.GET.get('from')) or (today - timedelta(days=30))
+    to_date = parse_date(request.GET.get('to')) or today
 
     payments = Payment.objects.filter(
         payment_date__gte=from_date,
@@ -158,8 +153,10 @@ def export_sales_excel(request):
 
 @login_required
 def export_sales_pdf(request):
-    from_date = _parse_date(request.GET.get('from')) or (timezone.now().date() - __import__('datetime').timedelta(days=30))
-    to_date = _parse_date(request.GET.get('to')) or timezone.now().date()
+    from datetime import timedelta
+    today = timezone.now().date()
+    from_date = parse_date(request.GET.get('from')) or (today - timedelta(days=30))
+    to_date = parse_date(request.GET.get('to')) or today
 
     payments = list(Payment.objects.filter(
         payment_date__gte=from_date,
@@ -209,7 +206,7 @@ def export_debts_excel(request):
     today = timezone.now().date()
     debtors = []
     seen = set()
-    for order in Order.objects.filter(status__in=['draft', 'in_progress']).select_related('client'):
+    for order in Order.objects.filter(status__in=['draft', 'in_progress', 'completed']).select_related('client'):
         if order.remaining_debt <= 0 or order.client_id in seen:
             continue
         seen.add(order.client_id)
@@ -247,7 +244,7 @@ def export_debts_pdf(request):
     today = timezone.now().date()
     debtors = []
     seen = set()
-    for order in Order.objects.filter(status__in=['draft', 'in_progress']).select_related('client'):
+    for order in Order.objects.filter(status__in=['draft', 'in_progress', 'completed']).select_related('client'):
         if order.remaining_debt <= 0 or order.client_id in seen:
             continue
         seen.add(order.client_id)
