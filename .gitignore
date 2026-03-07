@@ -1,8 +1,12 @@
-venv/
+
 __pycache__/
 *.py[cod]
 *$py.class
+
+# C extensions
 *.so
+
+# Distribution / packaging
 .Python
 build/
 develop-eggs/
@@ -16,23 +20,74 @@ parts/
 sdist/
 var/
 wheels/
+share/python-wheels/
 *.egg-info/
 .installed.cfg
 *.egg
-.env
-*.log
-db.sqlite3
-db.sqlite3-journal
+
+# PyInstaller
+*.manifest
+*.spec
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Environments
+venv/
+ENV/
+env/
+.venv/
+.ENV/
+.env/
+venv.bak/
+env.bak/
+.envrc
+
+# macOS
 .DS_Store
-*.png
-*.jpg
-*.jpeg
-media/
-staticfiles/
-.cache/
-.pytest_cache/
-.coverage
-htmlcov/
+
+
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+
 .idea/
 .vscode/
+*.sublime-project
+*.sublime-workspace
+*.code-workspace
 
+# Jupyter
+.ipynb_checkpoints
+
+.config/settings_dev.py
+
+
+.pytest_cache/
+
+
+.pyre/
+
+
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+
+.coverage
+.tox/
+htmlcov/
+
+*.log
+local_settings.py
+config/settings_dev.py
+db.sqlite3
+db.sqlite3-journal
+
+*.dockerfile
+docker-compose.override.yml
+.dockerignore
+
+.qodo
