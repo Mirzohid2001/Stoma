@@ -47,9 +47,9 @@ OrderWorkerFormSet = forms.inlineformset_factory(
     Order,
     OrderWorker,
     form=OrderWorkerForm,
-    extra=2,
+    extra=1,
     can_delete=True,
-    max_num=10,
+    max_num=15,
 )
 
 

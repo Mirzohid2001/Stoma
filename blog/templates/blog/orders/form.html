@@ -49,11 +49,16 @@
                     </div>
                     {% if worker_formset %}
                     <hr class="my-4">
-                    <h6 class="mb-3">Ishchilar (ishbay — buyurtmadan oylik hisoblanadi)</h6>
-                    <p class="small text-muted">Qaysi ishchi(lar) ushbu buyurtmada ishlashi va ulush foizini kiriting (jami 100% bo‘lishi shart emas).</p>
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div>
+                            <h6 class="mb-1">Ishchilar (ishbay — buyurtmadan oylik hisoblanadi)</h6>
+                            <p class="small text-muted mb-0">Qaysi ishchi(lar) ushbu buyurtmada ishlashi va ulush foizini kiriting (jami 100% bo‘lishi shart emas).</p>
+                        </div>
+                        <button type="button" class="btn btn-sm btn-outline-primary" id="add-worker-row">+ Ishchi qo'shish</button>
+                    </div>
                     {{ worker_formset.management_form }}
                     <div class="table-responsive">
-                        <table class="table table-sm">
+                        <table class="table table-sm" id="worker-formset-table" data-prefix="{{ worker_formset.prefix }}">
                             <thead><tr><th>Ishchi</th><th>Ulush (%)</th><th>O'chirish</th></tr></thead>
                             <tbody>
                             {% for f in worker_formset %}
@@ -93,6 +98,41 @@
     if (sel) sel.addEventListener('change', updateTotal);
     if (qty) qty.addEventListener('input', updateTotal);
     updateTotal();
+})();
+(function(){
+    var btn = document.getElementById('add-worker-row');
+    var table = document.getElementById('worker-formset-table');
+    if (!btn || !table) return;
+    var prefix = table.getAttribute('data-prefix') || 'form';
+    var totalInput = document.querySelector('input[name="' + prefix + '-TOTAL_FORMS"]');
+    var maxNumInput = document.querySelector('input[name="' + prefix + '-MAX_NUM"]');
+    if (!totalInput) return;
+    var tbody = table.querySelector('tbody');
+    var maxNum = maxNumInput ? parseInt(maxNumInput.value, 10) : 15;
+    if (isNaN(maxNum)) maxNum = 15;
+    var rePrefix = new RegExp('^' + prefix.replace(/-/g, '\\-') + '-\\d+-');
+    var rePrefixId = new RegExp('id_' + prefix.replace(/-/g, '\\-') + '-\\d+-');
+    btn.addEventListener('click', function(){
+        var total = parseInt(totalInput.value, 10) || 0;
+        if (total >= maxNum) return;
+        var lastRow = tbody.querySelector('tr.worker-row:last-child');
+        if (!lastRow) return;
+        var newRow = lastRow.cloneNode(true);
+        newRow.querySelectorAll('input, select').forEach(function(inp){
+            if (inp.name) inp.name = inp.name.replace(rePrefix, prefix + '-' + total + '-');
+            if (inp.id) inp.id = inp.id.replace(rePrefixId, 'id_' + prefix + '-' + total + '-');
+            if (inp.type === 'hidden' && inp.name && inp.name.indexOf('-id') !== -1) {
+                inp.value = '';
+            } else if (inp.type !== 'hidden') {
+                inp.value = inp.tagName === 'SELECT' ? '' : (inp.type === 'number' ? '100' : '');
+            }
+            if (inp.name && inp.name.indexOf('-DELETE') !== -1) inp.checked = false;
+        });
+        newRow.querySelectorAll('label').forEach(function(lbl){ if (lbl.htmlFor) lbl.htmlFor = lbl.htmlFor.replace(rePrefixId, 'id_' + prefix + '-' + total + '-'); });
+        newRow.querySelectorAll('.text-danger').forEach(function(el){ el.remove(); });
+        tbody.appendChild(newRow);
+        totalInput.value = total + 1;
+    });
 })();
 </script>
 {% endblock %}
