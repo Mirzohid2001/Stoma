@@ -108,7 +108,7 @@ def export_expenses_excel(request):
     ws.title = 'Rasxodlar'
     ws.append(['Sana', 'Turi', 'Summa (so\'m)', 'Tavsif'])
     for e in expenses:
-        ws.append([str(e.expense_date), e.get_category_display(), float(e.amount), e.description or ''])
+        ws.append([str(e.expense_date), (e.category.name if e.category else '—'), float(e.amount), e.description or ''])
     total = expenses.aggregate(s=Sum('amount'))['s'] or 0
     total_row = ws.max_row + 1
     ws.append(['', '', float(total), 'Jami'])

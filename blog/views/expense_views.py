@@ -7,7 +7,7 @@ from django.utils import timezone
 from django.views.decorators.http import require_POST
 
 from ..forms import ExpenseForm
-from ..models import Expense
+from ..models import Expense, ExpenseCategory
 from ..utils import get_page_number, parse_date
 
 
@@ -36,16 +36,15 @@ def expense_list(request):
     if q:
         expenses_qs = expenses_qs.filter(description__icontains=q)
     if category:
-        expenses_qs = expenses_qs.filter(category=category)
+        expenses_qs = expenses_qs.filter(category_id=category)
 
     total = expenses_qs.aggregate(s=Sum('amount'))['s'] or 0
     by_category = list(
-        expenses_qs.values('category')
+        expenses_qs.values('category__name')
         .annotate(s=Sum('amount'))
         .order_by('-s')
     )
-    category_labels = dict(Expense.CATEGORY_CHOICES)
-    by_category = [(category_labels.get(r['category'], r['category']), r['s']) for r in by_category]
+    by_category = [(r['category__name'] or '—', r['s']) for r in by_category]
 
     paginator = Paginator(expenses_qs, 20)
     expenses = paginator.get_page(get_page_number(request))
@@ -58,7 +57,7 @@ def expense_list(request):
         'category': category,
         'from_date': from_date,
         'to_date': to_date,
-        'category_choices': Expense.CATEGORY_CHOICES,
+        'category_choices': ExpenseCategory.objects.all(),
     })
 
 

@@ -307,19 +307,35 @@ class ActivityLog(models.Model):
         return f"{self.user} - {self.get_action_display()} - {self.model_name}"
 
 
+class ExpenseCategory(models.Model):
+    """Rasxod turi — adminkadan boshqariladi."""
+    name = models.CharField('Nomi', max_length=100)
+    order = models.PositiveSmallIntegerField('Tartib', default=0)
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        ordering = ['order', 'name']
+        verbose_name = 'Rasxod turi'
+        verbose_name_plural = 'Rasxod turlari'
+
+    def __str__(self):
+        return self.name
+
+
 class Expense(models.Model):
     """Rasxod (klinika chiqimlari)."""
-    CATEGORY_CHOICES = [
-        ('office', 'Ofis'),
-        ('salary', 'Maosh'),
-        ('equipment', 'Jihoz / uskuna'),
-        ('utilities', 'Kommunal'),
-        ('medication', 'Dori-darmon'),
-        ('other', 'Boshqa'),
-    ]
     expense_date = models.DateField('Sana', default=timezone.now)
     amount = models.DecimalField('Summa', max_digits=14, decimal_places=2)
-    category = models.CharField('Turi', max_length=20, choices=CATEGORY_CHOICES, default='other')
+    category = models.ForeignKey(
+        ExpenseCategory,
+        on_delete=models.PROTECT,
+        related_name='expenses',
+        verbose_name='Turi',
+        null=True,
+        blank=True,
+    )
     description = models.CharField('Tavsif', max_length=300, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     created_by = models.ForeignKey(
@@ -335,7 +351,7 @@ class Expense(models.Model):
         verbose_name_plural = 'Rasxodlar'
 
     def __str__(self):
-        return f"{self.expense_date} — {self.get_category_display()} ({self.amount:,.0f} so'm)"
+        return f"{self.expense_date} — {self.category.name if self.category else '—'} ({self.amount:,.0f} so'm)"
 
 
 class ClinicSettings(models.Model):

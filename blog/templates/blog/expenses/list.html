@@ -28,8 +28,8 @@
                 <label class="form-label small">Turi</label>
                 <select name="category" class="form-select form-select-sm" style="width: auto;">
                     <option value="">Barchasi</option>
-                    {% for value, label in category_choices %}
-                    <option value="{{ value }}" {% if category == value %}selected{% endif %}>{{ label }}</option>
+                    {% for c in category_choices %}
+                    <option value="{{ c.pk }}" {% if category == c.pk or category == c.pk|stringformat:"s" %}selected{% endif %}>{{ c.name }}</option>
                     {% endfor %}
                 </select>
             </div>
@@ -92,7 +92,7 @@
                 {% for e in expenses %}
                 <tr>
                     <td>{{ e.expense_date }}</td>
-                    <td>{{ e.get_category_display }}</td>
+                    <td>{{ e.category.name|default:"—" }}</td>
                     <td>{{ e.amount|intcomma }} so'm</td>
                     <td>{{ e.description|default:"—" }}</td>
                     <td>

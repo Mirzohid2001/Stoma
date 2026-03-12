@@ -5,6 +5,7 @@ from .models import (
     Client,
     ClinicSettings,
     Expense,
+    ExpenseCategory,
     Notification,
     NotificationSettings,
     Order,
@@ -135,6 +136,13 @@ class NotificationAdmin(admin.ModelAdmin):
 @admin.register(NotificationSettings)
 class NotificationSettingsAdmin(admin.ModelAdmin):
     list_display = ['user', 'order_deadline_days', 'debt_reminder_days', 'notify_via_telegram', 'notify_in_system']
+
+
+@admin.register(ExpenseCategory)
+class ExpenseCategoryAdmin(admin.ModelAdmin):
+    list_display = ['name', 'order']
+    list_editable = ['order']
+    ordering = ['order', 'name']
 
 
 @admin.register(Expense)

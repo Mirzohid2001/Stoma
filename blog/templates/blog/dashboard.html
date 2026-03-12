@@ -175,7 +175,7 @@
                 <div class="list-group list-group-flush">
                     {% for e in recent_expenses %}
                     <a href="{% url 'expense_list' %}" class="list-group-item list-group-item-action d-flex justify-content-between">
-                        <span>{{ e.expense_date }} — {{ e.get_category_display }}</span>
+                        <span>{{ e.expense_date }} — {{ e.category.name|default:"—" }}</span>
                         <span class="text-danger">{{ e.amount|intcomma }} so'm</span>
                     </a>
                     {% endfor %}
