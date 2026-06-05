@@ -1,15 +1,18 @@
 {% extends 'base.html' %}
-{% block auto_refresh_meta %}<meta http-equiv="refresh" content="30">{% endblock %}
 {% load humanize %}
 {% block title %}Buyurtmalar{% endblock %}
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h1 class="page-title">Buyurtmalar</h1>
-    <a href="{% url 'order_create' %}" class="btn btn-primary">Buyurtma qo'shish</a>
+<div class="page-header">
+    <div class="page-header-main">
+        <h1 class="page-title">Buyurtmalar</h1>
+        <p class="page-subtitle">Barcha buyurtmalar va statuslar</p>
+    </div>
+    <div class="page-header-actions">
+        <a href="{% url 'order_create' %}" class="btn btn-primary btn-icon"><i class="bi bi-plus-lg"></i> Qo'shish</a>
+    </div>
 </div>
 
-<div class="card mb-3">
-    <div class="card-body py-3">
+<div class="filter-panel">
         <form method="get" class="row g-2 align-items-center form-filter">
             <div class="col-auto">
                 <input type="text" name="q" class="form-control" placeholder="Qidirish..." value="{{ q }}" style="width: 200px;">
@@ -27,10 +30,9 @@
                 <button type="submit" class="btn btn-outline-primary">Filtrlash</button>
             </div>
         </form>
-    </div>
 </div>
 
-<div class="card">
+<div class="card table-card">
     <div class="table-responsive">
         <table class="table table-hover mb-0">
             <thead>

@@ -1,15 +1,16 @@
+from .expense_category_views import expense_category_create, expense_category_delete, expense_category_edit, expense_category_list
 from .activity_views import activity_log
 from .analytics_views import report_analytics
 from .auth_views import login_view, logout_view
 from .calendar_views import calendar_view
 from .client_views import client_list, client_create, client_detail, client_edit
 from .expense_views import expense_list, expense_create, expense_edit, expense_delete
-from .export_views import export_clients_excel, export_debts_excel, export_debts_pdf, export_expenses_excel, export_sales_excel, export_sales_pdf
+from .export_views import export_clients_excel, export_debts_excel, export_debts_pdf, export_expenses_excel, export_profit_loss_excel, export_profit_loss_pdf, export_sales_excel, export_sales_pdf
 from .notification_views import notification_count_api, notification_list, notification_read
 from .order_views import order_list, order_create, order_detail, order_edit, order_complete, order_set_status, order_cancel, order_copy, order_print
-from .payment_views import payment_add, payment_list
+from .payment_views import payment_add, payment_delete, payment_edit, payment_list
 from .receipt_views import payment_receipt
-from .report_views import dashboard, report_debts, report_sales, salary_report
+from .report_views import dashboard, report_debts, report_profit_loss, report_sales, salary_report
 from .servicetype_views import servicetype_create, servicetype_delete, servicetype_edit, servicetype_list
 from .settings_views import settings_view
 from .telegram_views import telegram_webhook

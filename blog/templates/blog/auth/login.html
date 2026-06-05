@@ -1,27 +1,45 @@
 {% extends 'base.html' %}
+{% block title %}Kirish{% endblock %}
 {% block content %}
-<div class="login-wrapper">
-    <div class="card login-card" style="width: 100%; max-width: 420px;">
-        <div class="card-header">
-            <h4 class="mb-1 fw-bold">Stoma</h4>
-            <small class="opacity-90">Stomatologik klinika — tizimga kirish</small>
-        </div>
-        <div class="card-body">
-            {% if error %}
-            <div class="alert alert-danger py-3">Login yoki parol noto'g'ri</div>
-            {% endif %}
-            <form method="post">
-                {% csrf_token %}
-                <div class="mb-3">
-                    <label class="form-label">Foydalanuvchi nomi</label>
-                    <input type="text" name="username" class="form-control form-control-lg" placeholder="Foydalanuvchi nomi" required autofocus>
-                </div>
-                <div class="mb-4">
-                    <label class="form-label">Parol</label>
-                    <input type="password" name="password" class="form-control form-control-lg" placeholder="••••••••" required>
-                </div>
-                <button type="submit" class="btn btn-primary w-100 py-3 fw-bold">Kirish</button>
-            </form>
+<div class="login-page">
+    <div class="login-brand">
+        <h1><i class="bi bi-heart-pulse me-2"></i>Stoma</h1>
+        <p>Stomatologik klinika uchun zamonaviy boshqaruv tizimi — mijozlar, buyurtmalar, to'lovlar va hisobotlar bir joyda.</p>
+        <ul class="login-brand-features">
+            <li><i class="bi bi-people"></i> Mijozlar va buyurtmalar boshqaruvi</li>
+            <li><i class="bi bi-cash-stack"></i> To'lovlar va qarzlar nazorati</li>
+            <li><i class="bi bi-graph-up-arrow"></i> Foyda/zarar hisobotlari</li>
+        </ul>
+    </div>
+    <div class="login-form-side">
+        <div class="login-card">
+            <div class="card-body">
+                <h2>Xush kelibsiz</h2>
+                <p class="login-subtitle">Davom etish uchun tizimga kiring</p>
+                {% if error %}
+                <div class="alert alert-danger py-2 mb-3"><i class="bi bi-exclamation-circle me-1"></i> Login yoki parol noto'g'ri</div>
+                {% endif %}
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label">Foydalanuvchi nomi</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-white"><i class="bi bi-person text-muted"></i></span>
+                            <input type="text" name="username" class="form-control" placeholder="username" required autofocus>
+                        </div>
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label">Parol</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-white"><i class="bi bi-lock text-muted"></i></span>
+                            <input type="password" name="password" class="form-control" placeholder="••••••••" required>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100 btn-lg btn-icon">
+                        <i class="bi bi-box-arrow-in-right"></i> Kirish
+                    </button>
+                </form>
+            </div>
         </div>
     </div>
 </div>

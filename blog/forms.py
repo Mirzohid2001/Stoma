@@ -1,5 +1,5 @@
 from django import forms
-from .models import Client, Expense, Order, OrderWorker, Payment, ServiceType, Worker, NotificationSettings, ClinicSettings
+from .models import Client, Expense, ExpenseCategory, Order, OrderWorker, Payment, ServiceType, Worker, NotificationSettings, ClinicSettings
 
 
 class ClientForm(forms.ModelForm):
@@ -107,9 +107,10 @@ class PaymentForm(forms.ModelForm):
         if amount is not None and amount <= 0:
             raise forms.ValidationError('Summa 0 dan katta bo\'lishi kerak')
         if self.order is not None and amount is not None:
-            from decimal import Decimal
-            remaining = getattr(self.order, 'remaining_debt', None)
-            if remaining is not None and remaining != Decimal('0') and amount > remaining:
+            remaining = self.order.remaining_debt
+            if self.instance.pk:
+                remaining += self.instance.amount
+            if amount > remaining:
                 raise forms.ValidationError('Summa qoldiq qarzdan oshmasligi kerak (qoldiq: %s so\'m)' % int(remaining))
         return amount
 
@@ -131,6 +132,17 @@ class PaymentForm(forms.ModelForm):
 
 
 class ExpenseForm(forms.ModelForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['category'].queryset = ExpenseCategory.objects.all().order_by('order', 'name')
+        self.fields['category'].required = True
+
+    def clean_category(self):
+        category = self.cleaned_data.get('category')
+        if not category:
+            raise forms.ValidationError('Rasxod turini tanlang')
+        return category
+
     def clean_amount(self):
         amount = self.cleaned_data.get('amount')
         if amount is not None and amount <= 0:
@@ -151,6 +163,17 @@ class ExpenseForm(forms.ModelForm):
             'amount': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
             'category': forms.Select(attrs={'class': 'form-select'}),
             'description': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Qisqacha tavsif (ixtiyoriy)'}),
+        }
+
+
+class ExpenseCategoryForm(forms.ModelForm):
+    class Meta:
+        model = ExpenseCategory
+        fields = ['name', 'order']
+        labels = {'name': 'Nomi', 'order': 'Tartib'}
+        widgets = {
+            'name': forms.TextInput(attrs={'class': 'form-control'}),
+            'order': forms.NumberInput(attrs={'class': 'form-control', 'min': 0}),
         }
 
 

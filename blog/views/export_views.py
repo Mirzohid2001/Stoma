@@ -13,8 +13,9 @@ from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import mm
 from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 
-from ..models import Client, Expense, Order, Payment
-from ..utils import parse_date
+from ..models import Client, Expense, Order, OrderWorker, Payment
+from ..utils import build_debtors_list, clients_with_stats, parse_date, resolve_profit_loss_dates
+from .report_views import compute_profit_loss
 
 # Excel umumiy stillar
 _EXCEL_HEADER_FILL = PatternFill(start_color='0d9488', end_color='0d9488', fill_type='solid')
@@ -68,7 +69,7 @@ def _style_excel_sheet(ws, num_cols, currency_cols=None, total_row=None, column_
 
 @login_required
 def export_clients_excel(request):
-    clients = Client.objects.all().order_by('full_name')
+    clients = clients_with_stats(Client.objects.all()).order_by('full_name')
     wb = Workbook()
     ws = wb.active
     ws.title = 'Mijozlar'
@@ -77,9 +78,9 @@ def export_clients_excel(request):
         ws.append([
             c.full_name,
             c.phone or '',
-            c.orders_count,
-            float(c.total_spent),
-            float(c.total_debt),
+            c.stats_orders_count,
+            float(c.stats_total_spent),
+            float(c.stats_total_debt),
             c.created_at.strftime('%Y-%m-%d') if c.created_at else '',
         ])
     _style_excel_sheet(ws, num_cols=6, currency_cols=[4, 5], column_widths=[28, 18, 14, 20, 18, 14])
@@ -204,19 +205,7 @@ def export_sales_pdf(request):
 @login_required
 def export_debts_excel(request):
     today = timezone.now().date()
-    debtors = []
-    seen = set()
-    for order in Order.objects.filter(status__in=['draft', 'in_progress', 'completed']).select_related('client'):
-        if order.remaining_debt <= 0 or order.client_id in seen:
-            continue
-        seen.add(order.client_id)
-        dl = order.debt_payment_deadline
-        debtors.append({
-            'client': order.client,
-            'debt': order.client.total_debt,
-            'deadline': dl,
-            'days_left': (dl - today).days if dl else None,
-        })
+    debtors = build_debtors_list(today)
 
     wb = Workbook()
     ws = wb.active
@@ -243,16 +232,12 @@ def export_debts_excel(request):
 def export_debts_pdf(request):
     today = timezone.now().date()
     debtors = []
-    seen = set()
-    for order in Order.objects.filter(status__in=['draft', 'in_progress', 'completed']).select_related('client'):
-        if order.remaining_debt <= 0 or order.client_id in seen:
-            continue
-        seen.add(order.client_id)
-        dl = order.debt_payment_deadline
-        days_left = (dl - today).days if dl else None
+    for row in build_debtors_list(today):
+        dl = row['deadline']
+        days_left = row['days_left']
         debtors.append({
-            'client': order.client,
-            'debt': float(order.client.total_debt),
+            'client': row['client'],
+            'debt': float(row['debt']),
             'deadline': str(dl) if dl else '—',
             'days_left': str(days_left) if days_left is not None else '—',
         })
@@ -281,4 +266,92 @@ def export_debts_pdf(request):
 
     resp = HttpResponse(buffer.getvalue(), content_type='application/pdf')
     resp['Content-Disposition'] = 'attachment; filename=qarzdorlar.pdf'
+    return resp
+
+
+@login_required
+def export_profit_loss_excel(request):
+    today = timezone.now().date()
+    from_date, to_date, _ = resolve_profit_loss_dates(
+        request.GET.get('from'),
+        request.GET.get('to'),
+        request.GET.get('quick_days'),
+        today,
+    )
+    summary = compute_profit_loss(from_date, to_date)
+    revenue = float(summary['revenue'])
+    expense_amount = float(summary['expense_amount'])
+    salary = summary['salary']
+    total_expense = summary['total_expense']
+    net_profit = summary['net_profit']
+    margin = summary['margin']
+
+    wb = Workbook()
+    ws = wb.active
+    ws.title = 'Foyda zarar'
+    ws.append(['Ko\'rsatkich', 'Qiymat'])
+    ws.append(['Davr', f'{from_date} - {to_date}'])
+    ws.append(['Daromad (to\'lovlar)', revenue])
+    ws.append(['Rasxodlar', expense_amount])
+    ws.append(['Ish haqi', salary])
+    ws.append(['Jami rasxod', total_expense])
+    ws.append(['Sof foyda', net_profit])
+    ws.append(['Foyda marjasi (%)', round(margin, 2)])
+    _style_excel_sheet(ws, num_cols=2, currency_cols=[2], column_widths=[28, 24])
+
+    resp = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    resp['Content-Disposition'] = f'attachment; filename=foyda_zarar_{from_date}_{to_date}.xlsx'
+    wb.save(resp)
+    return resp
+
+
+@login_required
+def export_profit_loss_pdf(request):
+    today = timezone.now().date()
+    from_date, to_date, _ = resolve_profit_loss_dates(
+        request.GET.get('from'),
+        request.GET.get('to'),
+        request.GET.get('quick_days'),
+        today,
+    )
+    summary = compute_profit_loss(from_date, to_date)
+    revenue = float(summary['revenue'])
+    expense_amount = float(summary['expense_amount'])
+    salary = summary['salary']
+    total_expense = summary['total_expense']
+    net_profit = summary['net_profit']
+    margin = summary['margin']
+
+    buffer = BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=A4, rightMargin=20, leftMargin=20, topMargin=30, bottomMargin=30)
+    styles = getSampleStyleSheet()
+    elements = [
+        Paragraph('Foyda / zarar hisoboti', styles['Title']),
+        Spacer(1, 10),
+        Paragraph(f'Davr: {from_date} - {to_date}', styles['Normal']),
+        Spacer(1, 16),
+    ]
+
+    data = [
+        ['Ko\'rsatkich', 'Qiymat'],
+        ["Daromad (to'lovlar)", f"{revenue:,.0f} so'm"],
+        ['Rasxodlar', f"{expense_amount:,.0f} so'm"],
+        ['Ish haqi', f"{salary:,.0f} so'm"],
+        ['Jami rasxod', f"{total_expense:,.0f} so'm"],
+        ['Sof foyda', f"{net_profit:,.0f} so'm"],
+        ['Foyda marjasi', f'{margin:.1f}%'],
+    ]
+    t = Table(data, colWidths=[220, 180])
+    t.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#0d9488')),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+        ('ALIGN', (1, 1), (1, -1), 'RIGHT'),
+    ]))
+    elements.append(t)
+    doc.build(elements)
+
+    resp = HttpResponse(buffer.getvalue(), content_type='application/pdf')
+    resp['Content-Disposition'] = f'attachment; filename=foyda_zarar_{from_date}_{to_date}.pdf'
     return resp

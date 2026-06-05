@@ -3,12 +3,13 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import render
 from django.utils import timezone
 from ..models import Order
+from ..utils import parse_calendar_month
 
 
 @login_required
 def calendar_view(request):
-    year = int(request.GET.get('year', timezone.now().year))
-    month = int(request.GET.get('month', timezone.now().month))
+    today = timezone.now().date()
+    year, month = parse_calendar_month(request.GET.get('year'), request.GET.get('month'), today)
 
     cal = Calendar(firstweekday=0)
     weeks = list(cal.monthdatescalendar(year, month))

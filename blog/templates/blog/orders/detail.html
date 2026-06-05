@@ -67,9 +67,15 @@
             </div>
             <div class="list-group list-group-flush">
                 {% for p in order.payments.all %}
-                <div class="list-group-item d-flex justify-content-between align-items-center">
+                <div class="list-group-item d-flex justify-content-between align-items-center flex-wrap gap-2">
                     <span>{{ p.payment_date }} — {{ p.get_payment_type_display }} ({{ p.amount|intcomma }} so'm)</span>
-                    <a href="{% url 'payment_receipt' p.pk %}" class="btn btn-sm btn-outline-primary" target="_blank">Chek</a>
+                    <div class="d-flex gap-1">
+                        <a href="{% url 'payment_receipt' p.pk %}" class="btn btn-sm btn-outline-primary" target="_blank">Chek</a>
+                        {% if order.status != 'cancelled' %}
+                        <a href="{% url 'payment_edit' p.pk %}" class="btn btn-sm btn-outline-secondary">Tahrir</a>
+                        <form method="post" action="{% url 'payment_delete' p.pk %}" class="d-inline">{% csrf_token %}<button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('To\'lovni o\'chirishni xohlaysizmi?')">O'chirish</button></form>
+                        {% endif %}
+                    </div>
                 </div>
                 {% empty %}
                 <div class="list-group-item text-muted">To'lovlar yo'q</div>

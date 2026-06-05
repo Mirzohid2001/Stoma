@@ -1,18 +1,113 @@
-from datetime import timedelta
+from calendar import monthrange
+from datetime import date, timedelta
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
-from django.db.models import F, Sum
+from django.db.models import Sum
 from django.shortcuts import render
 from django.utils import timezone
 from collections import defaultdict
 from ..models import Client, Expense, Order, OrderWorker, Payment
-from ..utils import get_page_number, parse_date
+from ..utils import build_debtors_list, get_page_number, parse_date, resolve_profit_loss_dates
+
+
+def compute_profit_loss(from_date, to_date):
+    """Berilgan davr uchun daromad, rasxod, ish haqi va sof foydani hisoblaydi."""
+    revenue = Payment.objects.filter(
+        payment_date__gte=from_date,
+        payment_date__lte=to_date,
+    ).aggregate(s=Sum('amount'))['s'] or 0
+    expense_amount = Expense.objects.filter(
+        expense_date__gte=from_date,
+        expense_date__lte=to_date,
+    ).aggregate(s=Sum('amount'))['s'] or 0
+    salary_rows = OrderWorker.objects.filter(
+        order__status='completed',
+        order__completed_at__date__gte=from_date,
+        order__completed_at__date__lte=to_date,
+    ).select_related('order')
+    salary = sum(float(ow.order.total_price) * float(ow.share_percent) / 100 for ow in salary_rows)
+
+    total_expense = float(expense_amount) + float(salary)
+    net_profit = float(revenue) - total_expense
+    margin = (net_profit / float(revenue) * 100) if float(revenue) else 0
+
+    return {
+        'revenue': revenue,
+        'expense_amount': expense_amount,
+        'salary': salary,
+        'total_expense': total_expense,
+        'net_profit': net_profit,
+        'margin': margin,
+    }
+
+
+def _month_bounds(anchor_date):
+    last_day = monthrange(anchor_date.year, anchor_date.month)[1]
+    return date(anchor_date.year, anchor_date.month, 1), date(anchor_date.year, anchor_date.month, last_day)
+
+
+def _shift_month(anchor_date, delta_months):
+    year = anchor_date.year
+    month = anchor_date.month + delta_months
+    while month <= 0:
+        month += 12
+        year -= 1
+    while month > 12:
+        month -= 12
+        year += 1
+    return date(year, month, 1)
+
+
+def _monthly_financial_series(today, months=6):
+    labels = []
+    revenue_data = []
+    expense_data = []
+    profit_data = []
+    expense_map = {}
+    salary_map = {}
+
+    base = today.replace(day=1)
+    for offset in range(months - 1, -1, -1):
+        probe = _shift_month(base, -offset)
+        month_start, month_end = _month_bounds(probe)
+        key = month_start.strftime('%Y-%m')
+        expense_map[key] = float(
+            Expense.objects.filter(expense_date__gte=month_start, expense_date__lte=month_end).aggregate(s=Sum('amount'))['s'] or 0
+        )
+        salary_rows = OrderWorker.objects.filter(
+            order__status='completed',
+            order__completed_at__date__gte=month_start,
+            order__completed_at__date__lte=month_end,
+        ).select_related('order')
+        salary_map[key] = sum(float(ow.order.total_price) * float(ow.share_percent) / 100 for ow in salary_rows)
+
+    for offset in range(months - 1, -1, -1):
+        probe = _shift_month(base, -offset)
+        month_start, month_end = _month_bounds(probe)
+        key = month_start.strftime('%Y-%m')
+
+        revenue = float(
+            Payment.objects.filter(payment_date__gte=month_start, payment_date__lte=month_end).aggregate(s=Sum('amount'))['s'] or 0
+        )
+        total_expense = expense_map[key] + salary_map[key]
+        profit = revenue - total_expense
+
+        labels.append(month_start.strftime('%b %Y'))
+        revenue_data.append(round(revenue, 2))
+        expense_data.append(round(total_expense, 2))
+        profit_data.append(round(profit, 2))
+
+    return labels, revenue_data, expense_data, profit_data
 
 
 @login_required
 def dashboard(request):
     today = timezone.now().date()
     week_start = today - timedelta(days=today.weekday())
+    trend_days = request.GET.get('trend_days', '7')
+    if trend_days not in {'7', '30', '90'}:
+        trend_days = '7'
+    trend_days_int = int(trend_days)
 
     today_sales = Payment.objects.filter(payment_date=today).aggregate(s=Sum('amount'))['s'] or 0
     week_sales = Payment.objects.filter(payment_date__gte=week_start).aggregate(s=Sum('amount'))['s'] or 0
@@ -63,8 +158,8 @@ def dashboard(request):
     # Bu oy ishchilarning hisoblangan oyligi (tugallangan buyurtmalar bo'yicha)
     month_order_workers = OrderWorker.objects.filter(
         order__status='completed',
-        order__created_at__date__gte=month_start,
-        order__created_at__date__lte=today,
+        order__completed_at__date__gte=month_start,
+        order__completed_at__date__lte=today,
     ).select_related('order')
     month_salary = sum(float(ow.order.total_price) * float(ow.share_percent) / 100 for ow in month_order_workers)
 
@@ -72,6 +167,43 @@ def dashboard(request):
     total_month_expense = float(month_expenses) + float(month_salary)
     # Sof foyda = daromad - rasxod
     month_net_profit = float(month_revenue) - total_month_expense
+
+    chart_start = today - timedelta(days=trend_days_int - 1)
+    daily_revenue = {
+        row['payment_date']: float(row['s'] or 0)
+        for row in Payment.objects.filter(payment_date__gte=chart_start, payment_date__lte=today)
+        .values('payment_date')
+        .annotate(s=Sum('amount'))
+    }
+    daily_expense = {
+        row['expense_date']: float(row['s'] or 0)
+        for row in Expense.objects.filter(expense_date__gte=chart_start, expense_date__lte=today)
+        .values('expense_date')
+        .annotate(s=Sum('amount'))
+    }
+    trend_labels = []
+    trend_revenue = []
+    trend_expenses = []
+    for i in range(trend_days_int):
+        day = chart_start + timedelta(days=i)
+        trend_labels.append(day.strftime('%d.%m'))
+        trend_revenue.append(round(daily_revenue.get(day, 0), 2))
+        trend_expenses.append(round(daily_expense.get(day, 0), 2))
+
+    category_rows = (
+        Expense.objects.filter(expense_date__gte=month_start, expense_date__lte=today)
+        .values('category__name')
+        .annotate(s=Sum('amount'))
+        .order_by('-s')
+    )
+    expense_category_labels = []
+    expense_category_data = []
+    for row in category_rows:
+        expense_category_labels.append(row['category__name'] or 'Noma\'lum')
+        expense_category_data.append(round(float(row['s'] or 0), 2))
+    if month_salary > 0:
+        expense_category_labels.append('Ish haqi')
+        expense_category_data.append(round(float(month_salary), 2))
 
     unread_count = request.user.notifications.filter(is_read=False).count()
 
@@ -94,6 +226,12 @@ def dashboard(request):
         'recent_expenses': recent_expenses,
         'today_orders': today_orders,
         'unread_count': unread_count,
+        'trend_labels': trend_labels,
+        'trend_revenue': trend_revenue,
+        'trend_expenses': trend_expenses,
+        'expense_category_labels': expense_category_labels,
+        'expense_category_data': expense_category_data,
+        'trend_days': trend_days,
     })
 
 
@@ -142,29 +280,8 @@ def report_sales(request):
 @login_required
 def report_debts(request):
     today = timezone.now().date()
-    debtors = []
-    seen = set()
-
-    orders_qs = Order.objects.filter(
-        status__in=['draft', 'in_progress', 'completed']
-    ).select_related('client').order_by(
-        F('debt_payment_deadline').asc(nulls_last=True)
-    )
-    for order in orders_qs:
-        if order.remaining_debt <= 0 or order.client_id in seen:
-            continue
-        seen.add(order.client_id)
-        client_debt = order.client.total_debt
-        dl = order.debt_payment_deadline
-        debtors.append({
-            'client': order.client,
-            'debt': client_debt,
-            'deadline': dl,
-            'days_left': (dl - today).days if dl else None,
-        })
-
+    debtors = build_debtors_list(today)
     total_debt = sum(float(d['debt']) for d in debtors)
-    debtors.sort(key=lambda x: (x['days_left'] if x['days_left'] is not None else 999, -float(x['debt'])))
 
     paginator = Paginator(debtors, 25)
     debtors_page = paginator.get_page(get_page_number(request))
@@ -199,8 +316,8 @@ def salary_report(request):
 
     order_workers = OrderWorker.objects.filter(
         order__status='completed',
-        order__created_at__date__gte=start,
-        order__created_at__date__lte=end,
+        order__completed_at__date__gte=start,
+        order__completed_at__date__lte=end,
     ).select_related('order', 'worker')
 
     by_worker = defaultdict(lambda: 0)
@@ -222,6 +339,30 @@ def salary_report(request):
         'month': month,
         'month_name': month_name,
         'months_choices': months_choices,
+    })
+
+
+@login_required
+def report_profit_loss(request):
+    today = timezone.now().date()
+    from_date, to_date, quick_days = resolve_profit_loss_dates(
+        request.GET.get('from'),
+        request.GET.get('to'),
+        request.GET.get('quick_days'),
+        today,
+    )
+    summary = compute_profit_loss(from_date, to_date)
+    month_labels, month_revenue, month_expenses, month_profit = _monthly_financial_series(today, months=6)
+
+    return render(request, 'blog/reports/profit_loss.html', {
+        'from_date': from_date,
+        'to_date': to_date,
+        'quick_days': quick_days,
+        'month_labels': month_labels,
+        'month_revenue': month_revenue,
+        'month_expenses': month_expenses,
+        'month_profit': month_profit,
+        **summary,
     })
 
 

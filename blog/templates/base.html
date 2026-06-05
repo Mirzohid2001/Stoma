@@ -4,68 +4,76 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    {% block auto_refresh_meta %}{% endblock %}
     <title>{% block title %}Stoma{% endblock %} | Stomatologik klinika</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link href="{% static 'css/style.css' %}" rel="stylesheet">
+    <link href="{% static 'css/style.css' %}?v=3" rel="stylesheet">
     {% block extra_css %}{% endblock %}
 </head>
-<body>
+<body class="{% if user.is_authenticated %}app-body{% endif %}">
     {% if user.is_authenticated %}
-    <nav class="navbar navbar-expand-lg navbar-dark">
-        <div class="container-fluid">
-            <a class="navbar-brand fw-bold" href="{% url 'dashboard' %}">Stoma</a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#nav">
+    <nav class="navbar navbar-expand-lg navbar-dark app-navbar sticky-top">
+        <div class="container-app">
+            <a class="navbar-brand" href="{% url 'dashboard' %}">
+                <span class="brand-icon"><i class="bi bi-heart-pulse"></i></span>
+                Stoma
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#nav" aria-label="Menyu">
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="nav">
-                <ul class="navbar-nav me-auto">
-                    <li class="nav-item"><a class="nav-link" href="{% url 'dashboard' %}">Bosh sahifa</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{% url 'client_list' %}">Mijozlar</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{% url 'order_list' %}">Buyurtmalar</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{% url 'payment_list' %}">To'lovlar</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{% url 'expense_list' %}">Rasxodlar</a></li>
+                <ul class="navbar-nav me-auto gap-lg-1">
+                    <li class="nav-item"><a class="nav-link" href="{% url 'dashboard' %}"><i class="bi bi-grid-1x2"></i> Bosh sahifa</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'client_list' %}"><i class="bi bi-people"></i> Mijozlar</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'order_list' %}"><i class="bi bi-clipboard-check"></i> Buyurtmalar</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'payment_list' %}"><i class="bi bi-cash-coin"></i> To'lovlar</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'expense_list' %}"><i class="bi bi-wallet2"></i> Rasxodlar</a></li>
                     <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">Hisobotlar</a>
+                        <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown"><i class="bi bi-bar-chart-line"></i> Hisobotlar</a>
                         <ul class="dropdown-menu">
                             <li><a class="dropdown-item" href="{% url 'report_sales' %}">Savdo</a></li>
                             <li><a class="dropdown-item" href="{% url 'report_debts' %}">Qarzdorlar</a></li>
                             <li><a class="dropdown-item" href="{% url 'salary_report' %}">Oylik ish haqi</a></li>
+                            <li><a class="dropdown-item" href="{% url 'report_profit_loss' %}">Foyda / zarar</a></li>
                             <li><a class="dropdown-item" href="{% url 'report_analytics' %}">Analitika</a></li>
                         </ul>
                     </li>
                     <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">Boshqaruv</a>
+                        <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown"><i class="bi bi-gear"></i> Boshqaruv</a>
                         <ul class="dropdown-menu">
                             <li><a class="dropdown-item" href="{% url 'servicetype_list' %}">Xizmat turlari</a></li>
+                            <li><a class="dropdown-item" href="{% url 'expense_category_list' %}">Rasxod turlari</a></li>
                             <li><a class="dropdown-item" href="{% url 'worker_list' %}">Ishchilar</a></li>
                             {% if user.is_staff %}<li><a class="dropdown-item" href="{% url 'activity_log' %}">Harakatlar logi</a></li>{% endif %}
                         </ul>
                     </li>
-                    <li class="nav-item"><a class="nav-link" href="{% url 'calendar' %}">Kalendar</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'calendar' %}"><i class="bi bi-calendar3"></i> Kalendar</a></li>
                 </ul>
-                <ul class="navbar-nav">
+                <ul class="navbar-nav align-items-lg-center gap-lg-1">
                     <li class="nav-item">
                         <a id="nav-notifications" class="nav-link d-flex align-items-center gap-1" href="{% url 'notification_list' %}">
-                            {% if unread_count %}<span class="notif-dot"></span>{% endif %}
-                            Bildirishnomalar{% if unread_count %} ({{ unread_count }}){% endif %}
+                            <i class="bi bi-bell"></i>
+                            <span class="d-none d-lg-inline">Bildirishnomalar</span>
+                            {% if unread_count %}<span class="nav-notif-badge">{{ unread_count }}</span>{% endif %}
                         </a>
                     </li>
-                    {% if user.is_staff %}<li class="nav-item"><a class="nav-link" href="{% url 'settings' %}">Sozlamalar</a></li>{% endif %}
-                    <li class="nav-item"><a class="nav-link" href="{% url 'logout' %}">Chiqish</a></li>
+                    {% if user.is_staff %}
+                    <li class="nav-item"><a class="nav-link" href="{% url 'settings' %}"><i class="bi bi-sliders"></i> <span class="d-none d-lg-inline">Sozlamalar</span></a></li>
+                    {% endif %}
+                    <li class="nav-item"><a class="nav-link" href="{% url 'logout' %}"><i class="bi bi-box-arrow-right"></i> <span class="d-none d-lg-inline">Chiqish</span></a></li>
                 </ul>
             </div>
         </div>
     </nav>
     {% endif %}
 
-    <main class="{% if user.is_authenticated %}py-4{% endif %}">
-        <div class="container-fluid {% if user.is_authenticated %}px-4{% endif %}">
+    <main class="{% if user.is_authenticated %}app-main{% endif %}">
+        <div class="container-fluid container-app">
             {% if messages %}
-            <div class="mb-3">
+            <div class="flash-messages">
                 {% for m in messages %}
-                <div class="alert alert-{{ m.tags }} alert-dismissible fade show mb-0" role="alert">
+                <div class="alert alert-{{ m.tags }} alert-dismissible fade show auto-fade" role="alert">
                     {{ m }}
                     <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Yopish"></button>
                 </div>
@@ -76,19 +84,26 @@
         </div>
     </main>
 
+    {% if user.is_authenticated %}
+    <footer class="app-footer">
+        <div class="container-app">Stoma — stomatologik klinika boshqaruv tizimi</div>
+    </footer>
+    {% endif %}
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{% static 'js/app.js' %}?v=2"></script>
     {% if user.is_authenticated %}
     <script>
     (function(){
         var notifLink = document.getElementById('nav-notifications');
         if (!notifLink) return;
-        var dotHtml = '<span class="notif-dot"></span>';
         function updateNotifCount(){
             fetch('{% url "notification_count_api" %}', {credentials:'same-origin'})
                 .then(r=>r.json()).then(function(d){
-                    var txt = 'Bildirishnomalar';
-                    if(d.count>0){ txt += ' ('+d.count+')'; }
-                    notifLink.innerHTML = (d.count>0 ? dotHtml : '') + txt;
+                    var icon = '<i class="bi bi-bell"></i>';
+                    var txt = '<span class="d-none d-lg-inline">Bildirishnomalar</span>';
+                    var badge = d.count > 0 ? '<span class="nav-notif-badge">'+d.count+'</span>' : '';
+                    notifLink.innerHTML = icon + ' ' + txt + badge;
                 }).catch(function(){});
         }
         setInterval(updateNotifCount, 60000);

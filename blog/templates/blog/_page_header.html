@@ -1,0 +1,16 @@
+<div class="page-header">
+    <div class="page-header-main">
+        {% if breadcrumb %}
+        <nav aria-label="breadcrumb" class="mb-1">
+            <ol class="breadcrumb mb-0">
+                {{ breadcrumb }}
+            </ol>
+        </nav>
+        {% endif %}
+        <h1 class="page-title">{{ title }}</h1>
+        {% if subtitle %}<p class="page-subtitle">{{ subtitle }}</p>{% endif %}
+    </div>
+    {% if actions %}
+    <div class="page-header-actions">{{ actions }}</div>
+    {% endif %}
+</div>

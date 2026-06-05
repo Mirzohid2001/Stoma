@@ -96,6 +96,7 @@ class Order(models.Model):
     deadline = models.DateField('Tayyor bo\'lish sanasi', null=True, blank=True)
     debt_payment_deadline = models.DateField('Qarz to\'lov sanasi', null=True, blank=True)
     status = models.CharField('Holat', max_length=20, choices=STATUS_CHOICES, default='draft')
+    completed_at = models.DateTimeField('Tugallangan vaqt', null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     created_by = models.ForeignKey(
@@ -147,7 +148,8 @@ class Order(models.Model):
 
     def mark_completed(self):
         self.status = 'completed'
-        self.save(update_fields=['status', 'updated_at'])
+        self.completed_at = timezone.now()
+        self.save(update_fields=['status', 'completed_at', 'updated_at'])
 
     def mark_cancelled(self):
         self.status = 'cancelled'
@@ -320,9 +322,6 @@ class ExpenseCategory(models.Model):
         verbose_name = 'Rasxod turi'
         verbose_name_plural = 'Rasxod turlari'
 
-    def __str__(self):
-        return self.name
-
 
 class Expense(models.Model):
     """Rasxod (klinika chiqimlari)."""
@@ -333,8 +332,6 @@ class Expense(models.Model):
         on_delete=models.PROTECT,
         related_name='expenses',
         verbose_name='Turi',
-        null=True,
-        blank=True,
     )
     description = models.CharField('Tavsif', max_length=300, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)

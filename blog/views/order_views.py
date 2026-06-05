@@ -47,14 +47,12 @@ def order_create(request):
         if form.is_valid():
             order = form.save(commit=False)
             order.created_by = request.user
-            order.save()
             formset = OrderWorkerFormSet(request.POST, instance=order)
             if formset.is_valid():
+                order.save()
                 formset.save()
                 messages.success(request, 'Buyurtma yaratildi.')
                 return redirect('order_detail', pk=order.pk)
-            messages.warning(request, 'Buyurtma yaratildi. Ishchilar ma\'lumotida xato — quyida tuzating.')
-            return redirect('order_edit', pk=order.pk)
         else:
             formset = OrderWorkerFormSet(request.POST)
     else:
